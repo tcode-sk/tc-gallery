@@ -1,0 +1,16 @@
+<div class="tc-gallery__slides" [@slidesAnimation]="show"
+     (@slidesAnimation.start)="onStart($event)"
+     (@slidesAnimation.done)="onDone($event)">
+  <div #dummySlide class="tc-gallery__slide tc-gallery__slide--dummy">DUMMY</div>
+  @for (slide of slides; let i = $index; track slide.slug) {
+    <div [id]="slide.slug" class="tc-gallery__slide">
+      <img [attr.src]="slide.src" [attr.alt]="slide.alt">
+    </div>
+  }
+  <button [disabled]="currentIndex === 0"
+          (click)="moveImage(animationDirectionEnum.LEFT)"
+          class="tc-gallery__arrow tc-gallery__arrow--left">&lt;</button>
+  <button [disabled]="currentIndex + 1 === images.length"
+          (click)="moveImage(animationDirectionEnum.RIGHT)"
+          class="tc-gallery__arrow tc-gallery__arrow--right">&gt;</button>
+</div>

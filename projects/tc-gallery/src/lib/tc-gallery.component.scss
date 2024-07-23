@@ -1,0 +1,42 @@
+.tc-gallery {
+  position: absolute;
+  display: flex;
+  top: 50%;
+  left: 50%;
+  z-index: 10000;
+
+  &:not(.tc-gallery--backdrop) {
+    height: 100%;
+    padding: 1rem;
+
+    transform: translate(-50%, -50%);
+  }
+}
+
+.tc-gallery--backdrop {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  > .tc-gallery__backdrop {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    overflow: hidden;
+
+    padding: 1rem;
+
+    background-color: rgba(0,0,0,0.5);
+  }
+}
+
+.tc-gallery__wrap {
+  img, video {
+    border-style: none;
+    max-width: 100%;
+    height: auto;
+    vertical-align: middle;
+  }
+}
