@@ -66,6 +66,11 @@ export interface TcGalleryImage {
   caption?: string,
 }
 
+export interface TcGalleryImageSelected {
+  selected: boolean,
+  slug: string,
+}
+
 export interface TcGalleryImages {
   images: TcGalleryImage[],
   openImage?: TcGalleryImage,
@@ -74,6 +79,7 @@ export interface TcGalleryImages {
 export interface TcGalleryConfig {
   backdrop?: boolean,
   selectable?: boolean,
+  preLoadImages?: boolean,
 }
 
 @Injectable({
@@ -86,6 +92,7 @@ export class TcGalleryService {
   defaultConfig: TcGalleryConfig = {
     backdrop: true,
     selectable: false,
+    preLoadImages: true,
   }
 
   constructor() { }

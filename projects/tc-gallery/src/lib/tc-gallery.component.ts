@@ -36,4 +36,7 @@ export class TcGalleryComponent {
       }
     }
   }
+
+  // @ToDo striky - finish it
+  tba(): void {}
 }

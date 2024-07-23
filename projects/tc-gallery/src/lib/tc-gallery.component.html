@@ -3,7 +3,10 @@
     @for (galleryInstance of galleryInstances; track galleryInstance.id) {
       <div class="tc-gallery" [class.tc-gallery--backdrop]="galleryInstance.config.backdrop" (click)="backdrop($event)">
         <div [attr.data-tc-gallery-id]="galleryInstance.id" class="tc-gallery__backdrop">
-          <lib-tc-gallery-slides style="width: 100%; height: 100%" [images]="galleryInstance.gallery"></lib-tc-gallery-slides>
+          <lib-tc-gallery-slides style="width: 100%; height: 100%"
+                                 [galleryInstance]="galleryInstance"
+                                 (selectedImage)="tba()">
+          </lib-tc-gallery-slides>
         </div>
       </div>
     }

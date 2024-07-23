@@ -4,13 +4,26 @@
   <div #dummySlide class="tc-gallery__slide tc-gallery__slide--dummy">DUMMY</div>
   @for (slide of slides; let i = $index; track slide.slug) {
     <div [id]="slide.slug" class="tc-gallery__slide">
-      <img [attr.src]="slide.src" [attr.alt]="slide.alt">
+      <img [attr.src]="slide.src" [attr.alt]="slide.alt" libImageLoaded (loaded)="lazyLoadImages(i)">
+      <button (click)="selectedImage.emit({selected: true, slug: slide.slug!})">Select me :)</button>
     </div>
   }
   <button [disabled]="currentIndex === 0"
           (click)="moveImage(animationDirectionEnum.LEFT)"
-          class="tc-gallery__arrow tc-gallery__arrow--left">&lt;</button>
+          class="tc-gallery__arrow tc-gallery__arrow--left">
+    @if (prevIsLoading) {
+      loading..
+    } @else {
+      &lt;
+    }
+  </button>
   <button [disabled]="currentIndex + 1 === images.length"
           (click)="moveImage(animationDirectionEnum.RIGHT)"
-          class="tc-gallery__arrow tc-gallery__arrow--right">&gt;</button>
+          class="tc-gallery__arrow tc-gallery__arrow--right">
+    @if (nextIsLoading) {
+      loading..
+    } @else {
+      &gt;
+    }
+  </button>
 </div>

@@ -51,7 +51,7 @@ export class AppComponent implements OnInit {
           {src: 'https://api.striky.sk/images/ckt/blog/slovakia-ring-september-2023/DSCF0540.jpg'},
           {src: 'https://api.striky.sk/images/ckt/blog/slovakia-ring-september-2023/DSCF0616.jpg'},
         ],
-      }, {backdrop: true});
+      }, {backdrop: true, preLoadImages: true});
 
     tcGalleryTest
       .afterClosed()
