@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   EventEmitter,
@@ -12,7 +13,7 @@ import {
 import { animate, AnimationEvent, query, style, transition, trigger } from '@angular/animations';
 import { NavigationExtras, Router } from '@angular/router';
 
-import { TcGallery, TcGalleryConfig, TcGalleryImage, TcGalleryImageSelected } from '../tc-gallery.service';
+import { TcGallery, TcGalleryConfig, TcGalleryImage, TcGalleryImageSelected, TcGalleryInternal } from '../tc-gallery.service';
 import { ImageLoadedDirective } from '../image-loaded.directive';
 
 enum AnimationDirectionEnum {
@@ -40,14 +41,15 @@ enum IsLoadingEnum {
       transition(`* => ${AnimationDirectionEnum.LEFT}`, query('.tc-gallery__slide', [animate('1s ease-in', style({transform: 'translateX(0)'}))])),
     ]),
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TcGallerySlidesComponent implements AfterViewInit {
 
-  @Input() set galleryInstance(tcGallery: TcGallery) {
-    this.config = tcGallery.config;
-    this._images = tcGallery.gallery.images;
+  @Input() set gallery(gallery: TcGalleryInternal) {
+    this.config = gallery.config;
+    this._images = gallery.gallery.images;
 
-    this.setupFirstImage(tcGallery.gallery);
+    this.setupFirstImage(gallery.gallery);
     this.setupSlides();
   }
   @Output() currentImage = new EventEmitter<TcGalleryImage>();
@@ -66,11 +68,19 @@ export class TcGallerySlidesComponent implements AfterViewInit {
   prevIsLoading = false;
   nextIsLoading = false;
 
-  currentIndex: number = 0;
+  set currentIndex(index: number) {
+    this._currentIndex = index;
+    this.currentImage.emit(this.images[index]);
+  };
+  get currentIndex(): number {
+    return this._currentIndex;
+  }
 
-  private config: TcGalleryConfig = {};
+  config: TcGalleryConfig = {};
+
   private isAnimated = false;
   private _images: TcGalleryImage[] = [];
+  private _currentIndex = 0;
 
   @ViewChild('dummySlide') dummySlide: ElementRef | undefined;
 
@@ -93,9 +103,13 @@ export class TcGallerySlidesComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (this.currentIndex === 1) {
+    if (this.currentIndex >= 1) {
       this.setStyleOnDummySlide(true);
     }
+  }
+
+  onChangeSelectImage(event: Event, slide: TcGalleryImage): void {
+    this.selectedImage.emit({selected: (event.target as HTMLInputElement).checked, image: slide});
   }
 
   onStart(event: AnimationEvent): void {
@@ -136,12 +150,14 @@ export class TcGallerySlidesComponent implements AfterViewInit {
         }
       }
 
-      const queryParams: NavigationExtras = {
-        queryParams: { tcg: this.images[this.currentIndex].slug },
-        queryParamsHandling: 'merge'
-      };
+      if (this.config.changeRoute) {
+        const queryParams: NavigationExtras = {
+          queryParams: { tcg: this.images[this.currentIndex].slug },
+          queryParamsHandling: 'merge'
+        };
 
-      this.router.navigate([], queryParams);
+        this.router.navigate([], queryParams);
+      }
       this.isAnimated = false;
       this.show = AnimationDirectionEnum.STOP;
     }
@@ -189,7 +205,6 @@ export class TcGallerySlidesComponent implements AfterViewInit {
     }
 
     this.currentIndex = imageIndex;
-    this.currentImage.emit(this.images[imageIndex]);
   }
 
   private setupSlides(): void {

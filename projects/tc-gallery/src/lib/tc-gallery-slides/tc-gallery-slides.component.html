@@ -5,7 +5,10 @@
   @for (slide of slides; let i = $index; track slide.slug) {
     <div [id]="slide.slug" class="tc-gallery__slide">
       <img [attr.src]="slide.src" [attr.alt]="slide.alt" libImageLoaded (loaded)="lazyLoadImages(i)">
-      <button (click)="selectedImage.emit({selected: true, slug: slide.slug!})">Select me :)</button>
+      @if (config.selectable) {
+        <label for="{{slide.slug + '--checkbox'}}">Select me :)</label>
+        <input [id]="slide.slug + '--checkbox'" type="checkbox" (change)="onChangeSelectImage($event, slide)">
+      }
     </div>
   }
   <button [disabled]="currentIndex === 0"

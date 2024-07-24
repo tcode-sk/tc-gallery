@@ -1,18 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, distinctUntilChanged, filter, map, Observable, Subject } from 'rxjs';
+import { NavigationExtras, Router } from '@angular/router';
 
-export interface TcGallery {
-  id: number,
-  gallery: {
-    images: TcGalleryImage[],
-    current: TcGalleryImage,
-  }
-  config: TcGalleryConfig,
-  afterClosed: Observable<TcAfterClosed>,
-}
-
-// @ToDo striky - fix the naming
-export class TcGalleryTest {
+export class TcGalleryInstance {
   private currentGallery: TcGallery;
 
   constructor(private galleryId: number, private tcGalleryService: TcGalleryService) {
@@ -32,12 +22,21 @@ export class TcGalleryTest {
   }
 
   currentImageChange(): Observable<TcGalleryImage> {
-    return this.tcGalleryService.galleryInstances$.pipe(
+    return this.tcGalleryService.galleries$.pipe(
       map((galleryInstances) => galleryInstances.find((galleryInstance) => galleryInstance.id === this.currentGallery.id)),
       filter((galleryInstance) => !!galleryInstance),
-      distinctUntilChanged((prev, curr) => prev!.gallery.current !== curr!.gallery.current),
+      distinctUntilChanged((prev, curr) => prev!.gallery.current.slug === curr!.gallery.current.slug),
       map((galleryInstance) => galleryInstance!.gallery.current)
-    )
+    );
+  }
+
+  selectImageChange(): Observable<TcGalleryImage[]> {
+    return this.tcGalleryService.galleries$.pipe(
+      map((galleryInstances) => galleryInstances.find((galleryInstance) => galleryInstance.id === this.currentGallery.id)),
+      filter((galleryInstance) => !!galleryInstance),
+      distinctUntilChanged((prev, curr) => prev!.selectedImages.length === curr!.selectedImages.length),
+      map((galleryInstance) => galleryInstance!.selectedImages)
+    );
   }
 
   afterClosed(): Observable<TcAfterClosed> {
@@ -45,13 +44,30 @@ export class TcGalleryTest {
   }
 
   private getCurrentGallery(id: number): TcGallery {
-    return this.tcGalleryService.galleryInstances$.value.find((galleryInstance) => galleryInstance.id === id)!;
+    return this.tcGalleryService.galleries$.value.find((galleryInstance) => galleryInstance.id === id)!;
   }
 }
 
-interface TcGalleryInternal extends TcGallery {
+export interface TcGallery {
+  id: number,
+  gallery: {
+    images: TcGalleryImage[],
+    current: TcGalleryImage,
+  },
+  config: TcGalleryConfig,
   selectedImages: TcGalleryImage[],
+  afterClosed: Observable<TcAfterClosed>,
+}
+
+export interface TcGalleryInternal {
+  id: number,
+  config: TcGalleryConfig,
+  gallery: {
+    images: TcGalleryImage[],
+    current: TcGalleryImage,
+  },
   afterClosedSubject: Subject<TcAfterClosed>,
+  visible: boolean,
 }
 
 export interface TcAfterClosed {
@@ -68,7 +84,7 @@ export interface TcGalleryImage {
 
 export interface TcGalleryImageSelected {
   selected: boolean,
-  slug: string,
+  image: TcGalleryImage,
 }
 
 export interface TcGalleryImages {
@@ -80,6 +96,7 @@ export interface TcGalleryConfig {
   backdrop?: boolean,
   selectable?: boolean,
   preLoadImages?: boolean,
+  changeRoute?: boolean,
 }
 
 @Injectable({
@@ -87,79 +104,206 @@ export interface TcGalleryConfig {
 })
 export class TcGalleryService {
 
-  galleryInstances$: BehaviorSubject<TcGalleryInternal[]> = new BehaviorSubject<TcGalleryInternal[]>([]);
+  galleriesInternal$ = new BehaviorSubject<TcGalleryInternal[]>([]);
+  galleries$: BehaviorSubject<TcGallery[]> = new BehaviorSubject<TcGallery[]>([]);
 
   defaultConfig: TcGalleryConfig = {
     backdrop: true,
     selectable: false,
     preLoadImages: true,
+    changeRoute: true,
   }
 
-  constructor() { }
+  constructor(private router: Router) { }
 
-  openGallery(galleryImages: TcGalleryImages, config?: TcGalleryConfig): TcGalleryTest {
+  registerGallery(galleryImages: TcGalleryImages, config?: TcGalleryConfig): TcGalleryInstance {
     const mergedConfig = {
       ...this.defaultConfig,
       ...config,
     }
 
     const afterClosed = new Subject<TcAfterClosed>();
-    const currentGalleryInstances = this.galleryInstances$.getValue();
+    const currentGalleriesInternal = this.galleriesInternal$.getValue();
+    const currentGalleries = this.galleries$.getValue();
 
-    const gallery = {
-      id: currentGalleryInstances.length + 1,
+    const gallery: TcGallery = {
+      id: currentGalleries.length + 1,
       gallery: {
         images: this.convertImages(galleryImages.images),
         current: galleryImages.openImage ?? galleryImages.images[0],
       },
       config: mergedConfig,
+      selectedImages: [],
       afterClosed: afterClosed.asObservable(),
     };
 
-    currentGalleryInstances.push({
-      ...gallery,
-      selectedImages: [],
+    currentGalleries.push(gallery);
+    currentGalleriesInternal.push({
+      id: gallery.id,
+      config: mergedConfig,
+      gallery: {
+        images: gallery.gallery.images.map((image) => ({...image})),
+        current: {...gallery.gallery.current},
+      },
       afterClosedSubject: afterClosed,
+      visible: false,
     });
 
-    this.galleryInstances$.next(currentGalleryInstances);
+    this.galleries$.next(currentGalleries);
+    this.galleriesInternal$.next(currentGalleriesInternal);
 
-    // return Injector.create({providers: [{ provide: TcGalleryTest, useValue: new TcGalleryTest(gallery.id, TcGalleryService) }]}).get(TcGalleryTest);
-    // Insert the dialog component into the template reference
-    // templateRef.createEmbeddedView(dialogComponentRef.hostView);
-    return new TcGalleryTest(gallery.id, this);
+    return new TcGalleryInstance(gallery.id, this);
+  }
+
+  openGallery(idOrGallery: number | TcGallery, openImage?: {tcgImage?: TcGalleryImage, src?: string}): void {
+    const galleryId = this.getGalleryId(idOrGallery);
+
+    const currentGalleriesInternal = this.galleriesInternal$.getValue()
+      .map((galleryInternal) => {
+        if (galleryInternal.id === galleryId) {
+          if (openImage) {
+            let currentImage: TcGalleryImage | undefined;
+            if (openImage.tcgImage) {
+              currentImage = openImage.tcgImage;
+            } else {
+              const foundCurrentImage = galleryInternal.gallery.images.find((image: TcGalleryImage) => image.src === openImage.src);
+              if (foundCurrentImage) {
+                currentImage = foundCurrentImage;
+              }
+            }
+            if (currentImage) {
+              galleryInternal = {
+                ...galleryInternal,
+                gallery: {
+                  ...galleryInternal.gallery,
+                  current: currentImage,
+                }
+              }
+            }
+          }
+
+          return {
+            ...galleryInternal,
+            visible: true,
+          }
+        }
+        return {...galleryInternal};
+      });
+
+    this.galleriesInternal$.next(currentGalleriesInternal);
   }
 
   closeLatestGallery(): void {
-    const latestGallery = this.galleryInstances$.value.at(-1);
+    const latestGallery = this.galleries$.value.at(-1);
     if (latestGallery) {
       this.closeGallery(latestGallery);
     }
   }
 
   closeGallery(idOrGallery: number | TcGallery): void {
-    let galleryId: number;
-    if (typeof idOrGallery === 'number') {
-      galleryId = idOrGallery;
-    } else {
-      galleryId = idOrGallery.id;
-    }
+    const galleryId = this.getGalleryId(idOrGallery);
 
-    const galleryIndex = this.galleryInstances$.value.findIndex((gallery) => gallery.id === galleryId);
+    const galleryIndex = this.galleries$.value.findIndex((gallery) => gallery.id === galleryId);
     if (galleryIndex >= 0) {
-      const galleryInstances = this.galleryInstances$.value;
-      const galleryInstance = galleryInstances[galleryIndex];
+      const galleries = this.galleries$.value;
+      const galleriesInternal = this.galleriesInternal$.value;
+      const gallery = galleries[galleryIndex];
+      const galleryInternal = galleriesInternal[galleryIndex];
 
-      if (galleryInstance.config.selectable) {
-        galleryInstance.afterClosedSubject.next({selected: galleryInstance.selectedImages});
+      if (gallery.config.selectable) {
+        galleryInternal.afterClosedSubject.next({selected: [...gallery.selectedImages]});
+        galleries[galleryIndex] = {...gallery, selectedImages: []};
+      } else {
+        galleryInternal.afterClosedSubject.next({});
       }
 
-      galleryInstance.afterClosedSubject.next({});
+      if (gallery.config.changeRoute) {
+        const queryParams: NavigationExtras = {
+          queryParams: { tcg: null },
+          queryParamsHandling: 'merge'
+        };
 
-      galleryInstances.splice(galleryIndex, 1);
+        this.router.navigate([], queryParams);
+      }
 
-      this.galleryInstances$.next(galleryInstances);
+      galleriesInternal[galleryIndex] = {
+        ...galleryInternal,
+        gallery: {
+          ...galleryInternal.gallery,
+          current: galleryInternal.gallery.images[0],
+        },
+        visible: false,
+      };
+
+      this.galleries$.next(galleries);
+      this.galleriesInternal$.next(galleriesInternal);
     }
+  }
+
+  deregisterGallery(idOrGallery: number | TcGallery): void {
+    const galleryId = this.getGalleryId(idOrGallery);
+
+    const galleryIndex = this.galleries$.value.findIndex((gallery) => gallery.id === galleryId);
+    if (galleryIndex >= 0) {
+      const galleries = this.galleries$.value;
+      const galleriesInternal = this.galleriesInternal$.value;
+      const galleryInternal = galleriesInternal[galleryIndex];
+
+      galleryInternal.afterClosedSubject.complete();
+
+      galleries.splice(galleryIndex, 1);
+      galleriesInternal.splice(galleryIndex, 1);
+
+      this.galleries$.next(galleries);
+      this.galleriesInternal$.next(galleriesInternal);
+    }
+  }
+
+  selectImage(galleryId: number, imageSelected: TcGalleryImageSelected): void {
+    let currentGalleries = this.galleries$.getValue();
+    currentGalleries = currentGalleries.map((currentGallery) => {
+      if (currentGallery.id === galleryId) {
+        let selectedImages: TcGalleryImage[] = [];
+        if (imageSelected.selected) {
+          selectedImages.push(imageSelected.image);
+        } else {
+          selectedImages = selectedImages.filter((image: TcGalleryImage) => image.slug === imageSelected.image.slug);
+        }
+
+        return {
+          ...currentGallery,
+          selectedImages,
+        }
+      }
+      return {...currentGallery};
+    });
+
+    this.galleries$.next(currentGalleries);
+  }
+
+  currentImageChanged(galleryId: number, image: TcGalleryImage): void {
+    let currentGalleries = this.galleries$.getValue();
+    currentGalleries = currentGalleries.map((currentGallery) => {
+      if (currentGallery.id === galleryId) {
+        return {
+          ...currentGallery,
+          gallery: {
+            ...currentGallery.gallery,
+            current: image,
+          },
+        };
+      }
+      return {...currentGallery};
+    });
+
+    this.galleries$.next(currentGalleries);
+  }
+
+  private getGalleryId(idOrGallery: number | TcGallery): number {
+    if (typeof idOrGallery === 'number') {
+      return idOrGallery;
+    }
+    return idOrGallery.id;
   }
 
   private convertImages(images: TcGalleryImage[]): TcGalleryImage[] {

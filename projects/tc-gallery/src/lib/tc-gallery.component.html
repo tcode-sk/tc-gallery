@@ -1,11 +1,12 @@
-<ng-container *ngIf="(tcGalleryService.galleryInstances$ | async) as galleryInstances">
-  @if (galleryInstances.length) {
-    @for (galleryInstance of galleryInstances; track galleryInstance.id) {
-      <div class="tc-gallery" [class.tc-gallery--backdrop]="galleryInstance.config.backdrop" (click)="backdrop($event)">
-        <div [attr.data-tc-gallery-id]="galleryInstance.id" class="tc-gallery__backdrop">
+<ng-container *ngIf="(galleriesInternal$ | async) as galleries">
+  @if (galleries.length) {
+    @for (gallery of galleries; track gallery.id) {
+      <div class="tc-gallery" [class.tc-gallery--backdrop]="gallery.config.backdrop" (click)="backdrop($event)">
+        <div [attr.data-tc-gallery-id]="gallery.id" class="tc-gallery__backdrop">
           <lib-tc-gallery-slides style="width: 100%; height: 100%"
-                                 [galleryInstance]="galleryInstance"
-                                 (selectedImage)="tba()">
+                                 [gallery]="gallery"
+                                 (selectedImage)="tcGalleryService.selectImage(gallery.id, $event)"
+                                 (currentImage)="tcGalleryService.currentImageChanged(gallery.id, $event)">
           </lib-tc-gallery-slides>
         </div>
       </div>
