@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable, Renderer2, RendererFactory2 } from '@angular/core';
 import { BehaviorSubject, distinctUntilChanged, filter, map, Observable, Subject } from 'rxjs';
 import { NavigationExtras, Router } from '@angular/router';
+import { DOCUMENT } from '@angular/common';
 
 export class TcGalleryInstance {
   private currentGallery: TcGallery;
@@ -114,7 +115,11 @@ export class TcGalleryService {
     changeRoute: true,
   }
 
-  constructor(private router: Router) { }
+  private renderer: Renderer2;
+
+  constructor(private router: Router, private rendererFactory: RendererFactory2, @Inject(DOCUMENT) private document: Document) {
+    this.renderer = this.rendererFactory.createRenderer(null, null);
+  }
 
   registerGallery(galleryImages: TcGalleryImages, config?: TcGalleryConfig): TcGalleryInstance {
     const mergedConfig = {
@@ -190,6 +195,7 @@ export class TcGalleryService {
         return {...galleryInternal};
       });
 
+    this.renderer.setStyle(this.document.body, 'overflow', 'hidden');
     this.galleriesInternal$.next(currentGalleriesInternal);
   }
 
@@ -201,6 +207,7 @@ export class TcGalleryService {
   }
 
   closeGallery(idOrGallery: number | TcGallery): void {
+    this.renderer.setStyle(this.document.body, 'overflow', 'auto');
     const galleryId = this.getGalleryId(idOrGallery);
 
     const galleryIndex = this.galleries$.value.findIndex((gallery) => gallery.id === galleryId);
