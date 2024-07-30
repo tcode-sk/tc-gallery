@@ -247,6 +247,22 @@ export class TcGalleryService {
     }
   }
 
+  closeAllGalleries(): void {
+    this.galleriesInternal$.value
+      .filter((galleryInternal) => galleryInternal.visible)
+      .forEach((galleryInternal) => {
+        this.closeGallery(galleryInternal.id);
+      })
+  }
+
+  closeAllRouteRelatedGalleries(): void {
+    this.galleriesInternal$.value
+      .filter((galleryInternal) => galleryInternal.config.changeRoute && galleryInternal.visible)
+      .forEach((galleryInternal) => {
+        this.closeGallery(galleryInternal.id);
+      })
+  }
+
   deregisterGallery(idOrGallery: number | TcGallery): void {
     const galleryId = this.getGalleryId(idOrGallery);
 

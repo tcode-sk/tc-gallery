@@ -2,11 +2,11 @@ import {
   AfterContentInit,
   ChangeDetectionStrategy,
   Component,
-  HostListener,
+  HostListener, OnDestroy,
 } from '@angular/core';
 import { AsyncPipe, NgIf } from '@angular/common';
-import { map, Subject, takeUntil } from 'rxjs';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { filter, map, Subject, takeUntil } from 'rxjs';
+import { ActivatedRoute, NavigationEnd, NavigationStart, Router } from '@angular/router';
 
 import { TcGalleryService } from './tc-gallery.service';
 import { TcGallerySlidesComponent } from './tc-gallery-slides/tc-gallery-slides.component';
@@ -23,13 +23,13 @@ import { TcGallerySlidesComponent } from './tc-gallery-slides/tc-gallery-slides.
   styleUrl: 'tc-gallery.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TcGalleryComponent implements AfterContentInit {
+export class TcGalleryComponent implements AfterContentInit, OnDestroy {
 
   galleriesInternal$ = this.tcGalleryService.galleriesInternal$.pipe(
     map((galleries) => galleries.filter((gallery) => gallery.visible)),
   );
 
-  takeUntilRouterEvents$ = new Subject<void>();
+  takeUntil$ = new Subject<void>();
 
   @HostListener('document:keydown', ['$event']) handleKeyboardEvent(event: KeyboardEvent) {
     if (event.key === 'Escape') {
@@ -40,25 +40,36 @@ export class TcGalleryComponent implements AfterContentInit {
   constructor(public tcGalleryService: TcGalleryService, private activatedRoute: ActivatedRoute, private router: Router) {}
 
   ngAfterContentInit(): void {
-    this.router.events.pipe(takeUntil(this.takeUntilRouterEvents$)).subscribe((event) => {
-      if (event instanceof NavigationEnd) {
-        const queryParams = this.activatedRoute.snapshot.queryParams;
-        if (queryParams['tcg']) {
-          const currentGalleries = this.tcGalleryService.galleries$.getValue();
-          currentGalleries.forEach((gallery) => {
-            if (gallery.config.changeRoute) {
-              const galleryImage = gallery.gallery.images.find((image) => image.slug === queryParams['tcg']);
-              if (galleryImage) {
-                this.tcGalleryService.openGallery(gallery.id, {tcgImage: galleryImage});
-              }
-            }
-          })
+    this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      filter(() => !!this.activatedRoute.snapshot.queryParams['tcg']),
+      map(() => this.tcGalleryService.galleries$.getValue().filter((gallery) => gallery.config.changeRoute)),
+      filter((currentGalleries) => currentGalleries.length > 0),
+      takeUntil(this.takeUntil$),
+    ).subscribe((currentGalleries) => {
+      currentGalleries.forEach((gallery) => {
+        const galleryInternal = this.tcGalleryService.galleriesInternal$.value.find((galleryInternal) => galleryInternal.id === gallery.id);
+        if (galleryInternal && !galleryInternal.visible) {
+          const galleryImage = gallery.gallery.images.find((image) => image.slug === this.activatedRoute.snapshot.queryParams['tcg']);
+          if (galleryImage) {
+            this.tcGalleryService.openGallery(gallery.id, {tcgImage: galleryImage});
+          }
         }
-
-        this.takeUntilRouterEvents$.next();
-        this.takeUntilRouterEvents$.complete();
-      }
+      });
     });
+
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationStart && event.navigationTrigger === 'popstate'),
+        filter(() => this.tcGalleryService.galleriesInternal$.value.filter((galleryInternal) => galleryInternal.config.changeRoute && galleryInternal.visible).length > 0),
+        takeUntil(this.takeUntil$),
+      )
+      .subscribe((event) => this.tcGalleryService.closeAllRouteRelatedGalleries());
+  }
+
+  ngOnDestroy(): void {
+    this.takeUntil$.next();
+    this.takeUntil$.complete();
   }
 
   backdrop(event: MouseEvent): void {

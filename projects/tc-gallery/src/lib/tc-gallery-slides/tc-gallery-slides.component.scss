@@ -27,6 +27,7 @@
     height: auto;
     max-height: 100%;
     vertical-align: middle;
+    flex: 0;
   }
 }
 
@@ -44,6 +45,18 @@
 
 .tc-gallery__arrow--right {
   right: 10px;
+}
+
+.tc-gallery__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  cursor: pointer;
+}
+
+.tc-gallery__close-svg {
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 .tc-gallery__spinner {

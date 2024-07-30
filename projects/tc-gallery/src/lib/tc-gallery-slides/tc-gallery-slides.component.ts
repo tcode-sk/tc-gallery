@@ -13,7 +13,14 @@ import {
 import { animate, AnimationEvent, query, style, transition, trigger } from '@angular/animations';
 import { NavigationExtras, Router } from '@angular/router';
 
-import { TcGallery, TcGalleryConfig, TcGalleryImage, TcGalleryImageSelected, TcGalleryInternal } from '../tc-gallery.service';
+import {
+  TcGallery,
+  TcGalleryConfig,
+  TcGalleryImage,
+  TcGalleryImageSelected,
+  TcGalleryInternal,
+  TcGalleryService
+} from '../tc-gallery.service';
 import { ImageLoadedDirective } from '../image-loaded.directive';
 
 enum AnimationDirectionEnum {
@@ -37,8 +44,8 @@ enum IsLoadingEnum {
   styleUrl: './tc-gallery-slides.component.scss',
   animations: [
     trigger('slidesAnimation', [
-      transition(`* => ${AnimationDirectionEnum.RIGHT}`, query('.tc-gallery__slide', [animate('1s ease-in', style({transform: 'translateX(-200%)'}))])),
-      transition(`* => ${AnimationDirectionEnum.LEFT}`, query('.tc-gallery__slide', [animate('1s ease-in', style({transform: 'translateX(0)'}))])),
+      transition(`* => ${AnimationDirectionEnum.RIGHT}`, query('.tc-gallery__slide', [animate('0.5s ease-in', style({transform: 'translateX(-200%)'}))])),
+      transition(`* => ${AnimationDirectionEnum.LEFT}`, query('.tc-gallery__slide', [animate('0.5s ease-in', style({transform: 'translateX(0)'}))])),
     ]),
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,18 +53,19 @@ enum IsLoadingEnum {
 export class TcGallerySlidesComponent implements AfterViewInit {
 
   @Input() set gallery(gallery: TcGalleryInternal) {
+    this._gallery = gallery;
+
     this.config = gallery.config;
-    this._images = gallery.gallery.images;
+    this.images = gallery.gallery.images;
 
     this.setupFirstImage(gallery.gallery);
     this.setupSlides();
   }
+  get gallery(): TcGalleryInternal {
+    return this._gallery;
+  }
   @Output() currentImage = new EventEmitter<TcGalleryImage>();
   @Output() selectedImage = new EventEmitter<TcGalleryImageSelected>();
-
-  get images(): TcGalleryImage[] {
-    return this._images;
-  }
 
   animationDirectionEnum = AnimationDirectionEnum;
 
@@ -77,10 +85,13 @@ export class TcGallerySlidesComponent implements AfterViewInit {
   }
 
   config: TcGalleryConfig = {};
+  images: TcGalleryImage[] = [];
 
   private isAnimated = false;
-  private _images: TcGalleryImage[] = [];
+
   private _currentIndex = 0;
+  private _gallery!: TcGalleryInternal;
+  private firstRouteNavigation = false;
 
   @ViewChild('dummySlide') dummySlide: ElementRef | undefined;
 
@@ -92,7 +103,7 @@ export class TcGallerySlidesComponent implements AfterViewInit {
     }
   }
 
-  constructor(private renderer: Renderer2, private router: Router) {}
+  constructor(private renderer: Renderer2, private router: Router, public tcGalleryService: TcGalleryService) {}
 
   get isPreviousSlideFirstOrHigher(): boolean {
     return this.currentIndex - 1 >= 0;
@@ -153,8 +164,10 @@ export class TcGallerySlidesComponent implements AfterViewInit {
       if (this.config.changeRoute) {
         const queryParams: NavigationExtras = {
           queryParams: { tcg: this.images[this.currentIndex].slug },
-          queryParamsHandling: 'merge'
+          queryParamsHandling: 'merge',
+          replaceUrl: this.firstRouteNavigation,
         };
+        this.firstRouteNavigation = true;
 
         this.router.navigate([], queryParams);
       }
