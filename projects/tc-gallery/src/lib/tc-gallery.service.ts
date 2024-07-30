@@ -18,6 +18,10 @@ export class TcGalleryInstance {
     return this.currentGallery.config;
   }
 
+  get isOpen(): boolean {
+    return !!this.tcGalleryService.galleriesInternal$.value.find((gallery) => gallery.id === this.galleryId)?.visible;
+  }
+
   currentImage(): TcGalleryImage {
     return this.getCurrentGallery(this.galleryId).gallery.current;
   }

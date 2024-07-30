@@ -1,6 +1,7 @@
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   EventEmitter,
@@ -21,7 +22,9 @@ import {
   TcGalleryInternal,
   TcGalleryService
 } from '../tc-gallery.service';
-import { ImageLoadedDirective } from '../image-loaded.directive';
+import { ImageLoadedDirective } from '../directives/image-loaded/image-loaded.directive';
+import { SwipeDirective } from '../directives/swipe/swipe.directive';
+import { SwipeDirection, SwipeEvent } from '../directives/swipe/swipe-core.types';
 
 enum AnimationDirectionEnum {
   LEFT = 'left',
@@ -39,6 +42,7 @@ enum IsLoadingEnum {
   standalone: true,
   imports: [
     ImageLoadedDirective,
+    SwipeDirective,
   ],
   templateUrl: './tc-gallery-slides.component.html',
   styleUrl: './tc-gallery-slides.component.scss',
@@ -103,7 +107,7 @@ export class TcGallerySlidesComponent implements AfterViewInit {
     }
   }
 
-  constructor(private renderer: Renderer2, private router: Router, public tcGalleryService: TcGalleryService) {}
+  constructor(private renderer: Renderer2, private router: Router, public tcGalleryService: TcGalleryService, private changeDetectorRef: ChangeDetectorRef,) {}
 
   get isPreviousSlideFirstOrHigher(): boolean {
     return this.currentIndex - 1 >= 0;
@@ -206,6 +210,18 @@ export class TcGallerySlidesComponent implements AfterViewInit {
       return;
     }
     this.show = direction;
+  }
+
+  onSwipeEnd(event: SwipeEvent): void {
+    if (event.direction === SwipeDirection.X && event.distance < 0 && Math.abs(event.distance) > 150) {
+      this.moveImage(this.animationDirectionEnum.RIGHT);
+      this.changeDetectorRef.detectChanges();
+    } else if (event.direction === SwipeDirection.X && event.distance > 0 && Math.abs(event.distance) > 150) {
+      this.moveImage(this.animationDirectionEnum.LEFT);
+      this.changeDetectorRef.detectChanges();
+    } else if (event.direction === SwipeDirection.Y && event.distance > 0 && Math.abs(event.distance) > 150) {
+      this.tcGalleryService.closeGallery(this.gallery.id);
+    }
   }
 
   private setupFirstImage(gallery: TcGallery['gallery']): void {
