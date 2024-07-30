@@ -4,6 +4,8 @@ import { TcGalleryComponent, TcGalleryService } from 'tc-gallery';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 
+import { IMAGES_MOCK } from './mock/images.mock';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -42,13 +44,7 @@ export class AppComponent implements OnInit {
 
     const tcGalleryTest = this.tcGalleryService
       .registerGallery({
-        images: [
-          {src: 'https://api.striky.sk/images/ckt/blog/slovakia-ring-september-2023/IMG_0097.jpg'},
-          {src: 'https://api.striky.sk/images/ckt/blog/slovakia-ring-september-2023/IMG_0091.jpg'},
-          {src: 'https://api.striky.sk/images/ckt/blog/slovakia-ring-september-2023/DSCF0533.jpg'},
-          {src: 'https://api.striky.sk/images/ckt/blog/slovakia-ring-september-2023/DSCF0540.jpg'},
-          {src: 'https://api.striky.sk/images/ckt/blog/slovakia-ring-september-2023/DSCF0616.jpg'},
-        ],
+        images: IMAGES_MOCK,
       }, {backdrop: true, preLoadImages: true, selectable: true});
 
     tcGalleryTest
