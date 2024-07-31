@@ -6,53 +6,40 @@
   <div #dummySlide class="tc-gallery__slide tc-gallery__slide--dummy">DUMMY</div>
   @for (slide of slides; let i = $index; track slide.slug) {
     <div [id]="slide.slug" class="tc-gallery__slide">
-      <img [attr.src]="slide.src" [attr.alt]="slide.alt" libImageLoaded (loaded)="lazyLoadImages(i)">
+      <figure class="tc-gallery__figure">
+        <img [attr.src]="slide.src" [attr.alt]="slide.alt" libImageLoaded (loaded)="lazyLoadImages(i)">
+        <figcaption *ngIf="slide.caption" class="tc-gallery__caption">{{slide.caption}}</figcaption>
+      </figure>
       @if (config.selectable) {
-        <label for="{{slide.slug + '--checkbox'}}">Select me :)</label>
-        <input [id]="slide.slug + '--checkbox'" type="checkbox" (change)="onChangeSelectImage($event, slide)">
+        <div class="tc-gallery__check">
+          <input [id]="slide.slug + '--checkbox'" type="checkbox" class="tc-gallery__checkbox" (change)="onChangeSelectImage($event, slide)">
+          <label for="{{slide.slug + '--checkbox'}}" class="tc-gallery__check-label"></label>
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="tc-gallery__checked"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
       }
     </div>
   }
-  <button class="tc-gallery__close" type="button" (click)="tcGalleryService.closeGallery(gallery.id)">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 32 32"
-      class="tc-gallery__close-svg"
-    >
-      <path d="M16 0c-8.837 0-16 7.163-16 16s7.163 16 16 16 16-7.163 16-16-7.163-16-16-16zM16 29c-7.18 0-13-5.82-13-13s5.82-13 13-13 13 5.82 13 13-5.82 13-13 13z"></path>
-      <path d="M21 8l-5 5-5-5-3 3 5 5-5 5 3 3 5-5 5 5 3-3-5-5 5-5z"></path>
-    </svg>
+  <button class="tc-gallery__btn tc-gallery__btn--close" type="button" (click)="tcGalleryService.closeGallery(gallery.id)">
+    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="tc-gallery__btn-svg"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
   </button>
   <button [disabled]="currentIndex === 0 || prevIsLoading"
           (click)="moveImage(animationDirectionEnum.LEFT)"
-          class="tc-gallery__arrow tc-gallery__arrow--left"
+          class="tc-gallery__btn tc-gallery__btn--arrow tc-gallery__btn--prev"
           type="button">
     @if (prevIsLoading) {
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 32 32"
-        class="tc-gallery__spinner"
-      >
-        <path d="M32 12h-12l4.485-4.485c-2.267-2.266-5.28-3.515-8.485-3.515s-6.219 1.248-8.485 3.515c-2.266 2.267-3.515 5.28-3.515 8.485s1.248 6.219 3.515 8.485c2.267 2.266 5.28 3.515 8.485 3.515s6.219-1.248 8.485-3.515c0.189-0.189 0.371-0.384 0.546-0.583l3.010 2.634c-2.933 3.349-7.239 5.464-12.041 5.464-8.837 0-16-7.163-16-16s7.163-16 16-16c4.418 0 8.418 1.791 11.313 4.687l4.687-4.687v12z"></path>
-      </svg>
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="tc-gallery__btn-svg tc-gallery__btn-svg--spinner"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
     } @else {
-      &lt;
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="tc-gallery__btn-svg"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
     }
   </button>
   <button [disabled]="currentIndex + 1 === images.length || nextIsLoading"
           (click)="moveImage(animationDirectionEnum.RIGHT)"
-          class="tc-gallery__arrow tc-gallery__arrow--right"
+          class="tc-gallery__btn tc-gallery__btn--arrow tc-gallery__btn--next"
           type="button">
     @if (nextIsLoading) {
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 32 32"
-        class="tc-gallery__spinner"
-      >
-        <path d="M32 12h-12l4.485-4.485c-2.267-2.266-5.28-3.515-8.485-3.515s-6.219 1.248-8.485 3.515c-2.266 2.267-3.515 5.28-3.515 8.485s1.248 6.219 3.515 8.485c2.267 2.266 5.28 3.515 8.485 3.515s6.219-1.248 8.485-3.515c0.189-0.189 0.371-0.384 0.546-0.583l3.010 2.634c-2.933 3.349-7.239 5.464-12.041 5.464-8.837 0-16-7.163-16-16s7.163-16 16-16c4.418 0 8.418 1.791 11.313 4.687l4.687-4.687v12z"></path>
-      </svg>
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="tc-gallery__btn-svg tc-gallery__btn-svg--spinner"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
     } @else {
-      &gt;
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="tc-gallery__btn-svg"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
     }
   </button>
 </div>

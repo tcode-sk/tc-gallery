@@ -1,13 +1,8 @@
 .tc-gallery__slides {
   position: relative;
   display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
   overflow: hidden;
-
-  height: inherit;
-
-  background-color: rgba(0,0,0,0.5);
+  height: calc(100vh - 2rem);
 }
 
 .tc-gallery__slide {
@@ -16,58 +11,135 @@
   align-items: center;
   justify-content: center;
 
-  text-align: center;
-
   transform: translateX(-100%);
   transition: transform 0.5s ease;
+}
 
-  img, video {
-    border-style: none;
-    max-width: 100%;
-    height: auto;
-    max-height: 100%;
-    vertical-align: middle;
-    flex: 0;
+.tc-gallery__figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: 0;
+  margin: 0;
+
+  img {
+    max-height: calc(100vh - 2rem);
   }
 }
 
-.tc-gallery__arrow {
+.tc-gallery__caption {
+  background: #fff;
+  font-size: 1.5rem;
+  line-height: 1.33333333;
+  padding: .5rem;
+}
+
+.tc-gallery__check {
   position: absolute;
+  top: .5rem;
+  left: .5rem;
+}
+
+.tc-gallery__checkbox {
+  /* visually hidden styles */
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+  /* end of visually hidden styles */
+}
+
+.tc-gallery__check-label {
+  display: inline-block;
+  font-size: 1rem;
+  line-height: 1.5;
+  min-height: 1.5rem;
+  padding: 0 0 0 1.5rem;
+  position: relative;
+
+  &[for] {
+    cursor: pointer;
+  }
+
+  &::before {
+    display: block;
+    content: '';
+    background: #fff;
+    border: .125rem solid hsl(0, 0%, 32%);
+    border-radius: .25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+}
+
+.tc-gallery__checked {
+  width: 1.5rem;
+  height: 1.5rem;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: scale(0);
+  transition: transform .15s;
+  pointer-events: none;
+
+  .tc-gallery__checkbox:checked ~ & {
+    transform: scale(1);
+  }
+}
+
+.tc-gallery__btn {
+  /* button reset styles */
+  border: none;
+  color: inherit;
+  font-weight: 400;
+  box-shadow: none;
+  /* end of button reset styles */
+  display: inline-flex;
+  background: #fff;
+  border-radius: .25rem;
+  padding: .5rem;
+  position: absolute;
+  cursor: pointer;
+}
+
+.tc-gallery__btn--arrow {
   top: 50%;
   transform: translateY(-50%);
-  font-size: 24px;
-  cursor: pointer;
 }
 
-.tc-gallery__arrow--left {
-  left: 10px;
+.tc-gallery__btn--prev {
+  left: .5rem;
 }
 
-.tc-gallery__arrow--right {
-  right: 10px;
+.tc-gallery__btn--next {
+  right: .5rem;
 }
 
-.tc-gallery__close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  cursor: pointer;
+.tc-gallery__btn--close {
+  top: .5rem;
+  right: .5rem;
 }
 
-.tc-gallery__close-svg {
+.tc-gallery__btn-svg {
   width: 1.5rem;
   height: 1.5rem;
 }
 
-.tc-gallery__spinner {
-  width: 1rem;
-  height: 1rem;
-
+.tc-gallery__btn-svg--spinner {
   animation: spin 1.5s linear infinite;
 }
 
 @keyframes spin {
-  100% {
+  to {
     transform: rotate(360deg);
   }
 }
