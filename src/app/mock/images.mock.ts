@@ -1,6 +1,10 @@
 export const IMAGES_MOCK = [
   {
-    "src": "https://fotky.striky.sk/api/assets/2024-06-29_Pistany/2024-06-29-15-05-27_LT30002@2x-min.avif"
+    "src": "https://fotky.striky.sk/api/assets/2024-06-29_Pistany/2024-06-29-15-05-27_LT30002@2x-min.avif",
+    "name": "TEST NAME",
+    "caption": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Atque eveniet iure laudantium modi, omnis pariatur quidem vero? Error neque, veritatis.",
+    "alt": "TEST IMAGE ALT",
+    "slug": "our-custom-slug"
   },
   {
     "src": "https://fotky.striky.sk/api/assets/2024-06-29_Pistany/2024-06-29-15-05-28_LT30004@2x-min.avif"

@@ -8,7 +8,9 @@
     <div [id]="slide.slug" class="tc-gallery__slide">
       <figure class="tc-gallery__figure">
         <img [attr.src]="slide.src" [attr.alt]="slide.alt" libImageLoaded (loaded)="lazyLoadImages(i)">
-        <figcaption *ngIf="slide.caption" class="tc-gallery__caption">{{slide.caption}}</figcaption>
+        @if (slide.caption) {
+          <figcaption class="tc-gallery__caption">{{slide.caption}}</figcaption>
+        }
       </figure>
       @if (config.selectable) {
         <div class="tc-gallery__check">
