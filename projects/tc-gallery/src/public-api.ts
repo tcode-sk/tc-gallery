@@ -2,5 +2,5 @@
  * Public API Surface of tc-gallery
  */
 
-export * from './lib/tc-gallery.service';
-export * from './lib/tc-gallery.component';
+export * from './lib/services/tc-gallery.service';
+export * from './lib/components/tc-gallery/tc-gallery.component';

@@ -8,13 +8,16 @@
     <div [id]="slide.slug" class="tc-gallery__slide">
       <figure class="tc-gallery__figure">
         <img [attr.src]="slide.src" [attr.alt]="slide.alt" libImageLoaded (loaded)="lazyLoadImages(i)">
+        @if (slide.isLoading) {
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="tc-gallery__btn-svg tc-gallery__btn-svg--xl tc-gallery__btn-svg--spinner"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        }
         @if (slide.caption) {
           <figcaption class="tc-gallery__caption">{{slide.caption}}</figcaption>
         }
       </figure>
       @if (config.selectable) {
         <div class="tc-gallery__check">
-          <input [id]="slide.slug + '--checkbox'" type="checkbox" class="tc-gallery__checkbox" (change)="onChangeSelectImage($event, slide)">
+          <input [id]="slide.slug + '--checkbox'" type="checkbox" class="tc-gallery__checkbox" (change)="onChangeSelectImage($event, slide)" [checked]="slide.selected">
           <label for="{{slide.slug + '--checkbox'}}" class="tc-gallery__check-label"></label>
           <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="tc-gallery__checked"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
@@ -34,7 +37,7 @@
       <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="tc-gallery__btn-svg"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
     }
   </button>
-  <button [disabled]="currentIndex + 1 === images.length || nextIsLoading"
+  <button [disabled]="currentIndex + 1 === images.length || nextIsLoading || slides.length === 1"
           (click)="moveImage(animationDirectionEnum.RIGHT)"
           class="tc-gallery__btn tc-gallery__btn--arrow tc-gallery__btn--next"
           type="button">

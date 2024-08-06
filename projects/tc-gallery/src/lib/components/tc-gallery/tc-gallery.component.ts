@@ -5,11 +5,14 @@ import {
   HostListener, OnDestroy,
 } from '@angular/core';
 import { AsyncPipe, NgIf } from '@angular/common';
-import { filter, map, Subject, takeUntil } from 'rxjs';
+import { filter, map, Observable, takeUntil } from 'rxjs';
 import { ActivatedRoute, NavigationEnd, NavigationStart, Router } from '@angular/router';
 
-import { TcGalleryService } from './tc-gallery.service';
-import { TcGallerySlidesComponent } from './tc-gallery-slides/tc-gallery-slides.component';
+import { BaseComponent } from '../base/base.component';
+import { TcGalleryService } from '../../services/tc-gallery.service';
+import { TcGallerySlidesComponent } from '../tc-gallery-slides/tc-gallery-slides.component';
+import { TcGallery, TcGalleryInternal } from '../../interfaces/tc-gallery.interface';
+import { TcGalleryImage } from '../../interfaces/tc-gallery-image.interface';
 
 @Component({
   selector: 'tc-gallery',
@@ -23,13 +26,11 @@ import { TcGallerySlidesComponent } from './tc-gallery-slides/tc-gallery-slides.
   styleUrl: 'tc-gallery.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TcGalleryComponent implements AfterContentInit, OnDestroy {
+export class TcGalleryComponent extends BaseComponent implements AfterContentInit, OnDestroy {
 
-  galleriesInternal$ = this.tcGalleryService.galleriesInternal$.pipe(
-    map((galleries) => galleries.filter((gallery) => gallery.visible)),
+  galleriesInternal$: Observable<TcGalleryInternal[]> = this.tcGalleryService.galleriesInternal$.pipe(
+    map((galleries: TcGalleryInternal[]) => galleries.filter((gallery) => gallery.visible)),
   );
-
-  takeUntil$ = new Subject<void>();
 
   @HostListener('document:keydown', ['$event']) handleKeyboardEvent(event: KeyboardEvent) {
     if (event.key === 'Escape') {
@@ -37,20 +38,22 @@ export class TcGalleryComponent implements AfterContentInit, OnDestroy {
     }
   }
 
-  constructor(public tcGalleryService: TcGalleryService, private activatedRoute: ActivatedRoute, private router: Router) {}
+  constructor(public tcGalleryService: TcGalleryService, private activatedRoute: ActivatedRoute, private router: Router) {
+    super();
+  }
 
   ngAfterContentInit(): void {
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
       filter(() => !!this.activatedRoute.snapshot.queryParams['tcg']),
-      map(() => this.tcGalleryService.galleries$.getValue().filter((gallery) => gallery.config.changeRoute)),
-      filter((currentGalleries) => currentGalleries.length > 0),
+      map(() => this.tcGalleryService.galleries$.getValue().filter((gallery: TcGallery) => gallery.config.changeRoute)),
+      filter((currentGalleries: TcGallery[]) => currentGalleries.length > 0),
       takeUntil(this.takeUntil$),
-    ).subscribe((currentGalleries) => {
-      currentGalleries.forEach((gallery) => {
-        const galleryInternal = this.tcGalleryService.galleriesInternal$.value.find((galleryInternal) => galleryInternal.id === gallery.id);
+    ).subscribe((currentGalleries: TcGallery[]) => {
+      currentGalleries.forEach((gallery: TcGallery) => {
+        const galleryInternal = this.tcGalleryService.galleriesInternal$.value.find((galleryInternal: TcGalleryInternal) => galleryInternal.id === gallery.id);
         if (galleryInternal && !galleryInternal.visible) {
-          const galleryImage = gallery.gallery.images.find((image) => image.slug === this.activatedRoute.snapshot.queryParams['tcg']);
+          const galleryImage = gallery.gallery.images.find((image: TcGalleryImage) => image.slug === this.activatedRoute.snapshot.queryParams['tcg']);
           if (galleryImage) {
             this.tcGalleryService.openGallery(gallery.id, {tcgImage: galleryImage});
           }
@@ -61,15 +64,10 @@ export class TcGalleryComponent implements AfterContentInit, OnDestroy {
     this.router.events
       .pipe(
         filter((event) => event instanceof NavigationStart && event.navigationTrigger === 'popstate'),
-        filter(() => this.tcGalleryService.galleriesInternal$.value.filter((galleryInternal) => galleryInternal.config.changeRoute && galleryInternal.visible).length > 0),
+        filter(() => this.tcGalleryService.galleriesInternal$.value.filter((galleryInternal: TcGalleryInternal) => galleryInternal.config.changeRoute && galleryInternal.visible).length > 0),
         takeUntil(this.takeUntil$),
       )
       .subscribe((event) => this.tcGalleryService.closeAllRouteRelatedGalleries());
-  }
-
-  ngOnDestroy(): void {
-    this.takeUntil$.next();
-    this.takeUntil$.complete();
   }
 
   backdrop(event: MouseEvent): void {

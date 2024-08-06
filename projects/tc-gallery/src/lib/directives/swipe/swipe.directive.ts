@@ -2,7 +2,7 @@ import { Directive, ElementRef, EventEmitter, NgZone, OnDestroy, OnInit, Output 
 import { Subscription } from 'rxjs';
 
 import { SwipeEvent } from './swipe-core.types';
-import { createSwipeSubscription } from './/swipe-core';
+import { createSwipeSubscription } from './swipe-core';
 
 @Directive({
   selector: '[ngSwipe]',

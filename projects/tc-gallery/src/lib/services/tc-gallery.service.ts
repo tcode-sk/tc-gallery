@@ -1,108 +1,12 @@
 import { Inject, Injectable, Renderer2, RendererFactory2 } from '@angular/core';
-import { BehaviorSubject, distinctUntilChanged, filter, map, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { NavigationExtras, Router } from '@angular/router';
 import { DOCUMENT } from '@angular/common';
 
-export class TcGalleryInstance {
-  private currentGallery: TcGallery;
-
-  constructor(private galleryId: number, private tcGalleryService: TcGalleryService) {
-    this.currentGallery = this.getCurrentGallery(galleryId);
-  }
-
-  get id(): number {
-    return this.galleryId;
-  }
-
-  get config(): TcGalleryConfig {
-    return this.currentGallery.config;
-  }
-
-  get isOpen(): boolean {
-    return !!this.tcGalleryService.galleriesInternal$.value.find((gallery) => gallery.id === this.galleryId)?.visible;
-  }
-
-  currentImage(): TcGalleryImage {
-    return this.getCurrentGallery(this.galleryId).gallery.current;
-  }
-
-  currentImageChange(): Observable<TcGalleryImage> {
-    return this.tcGalleryService.galleries$.pipe(
-      map((galleryInstances) => galleryInstances.find((galleryInstance) => galleryInstance.id === this.currentGallery.id)),
-      filter((galleryInstance) => !!galleryInstance),
-      distinctUntilChanged((prev, curr) => prev!.gallery.current.slug === curr!.gallery.current.slug),
-      map((galleryInstance) => galleryInstance!.gallery.current)
-    );
-  }
-
-  selectImageChange(): Observable<TcGalleryImage[]> {
-    return this.tcGalleryService.galleries$.pipe(
-      map((galleryInstances) => galleryInstances.find((galleryInstance) => galleryInstance.id === this.currentGallery.id)),
-      filter((galleryInstance) => !!galleryInstance),
-      distinctUntilChanged((prev, curr) => prev!.selectedImages.length === curr!.selectedImages.length),
-      map((galleryInstance) => galleryInstance!.selectedImages)
-    );
-  }
-
-  afterClosed(): Observable<TcAfterClosed> {
-    return this.currentGallery.afterClosed;
-  }
-
-  private getCurrentGallery(id: number): TcGallery {
-    return this.tcGalleryService.galleries$.value.find((galleryInstance) => galleryInstance.id === id)!;
-  }
-}
-
-export interface TcGallery {
-  id: number,
-  gallery: {
-    images: TcGalleryImage[],
-    current: TcGalleryImage,
-  },
-  config: TcGalleryConfig,
-  selectedImages: TcGalleryImage[],
-  afterClosed: Observable<TcAfterClosed>,
-}
-
-export interface TcGalleryInternal {
-  id: number,
-  config: TcGalleryConfig,
-  gallery: {
-    images: TcGalleryImage[],
-    current: TcGalleryImage,
-  },
-  afterClosedSubject: Subject<TcAfterClosed>,
-  visible: boolean,
-}
-
-export interface TcAfterClosed {
-  selected?: TcGalleryImage[],
-}
-
-export interface TcGalleryImage {
-  src: string,
-  name?: string,
-  slug?: string,
-  alt?: string,
-  caption?: string,
-}
-
-export interface TcGalleryImageSelected {
-  selected: boolean,
-  image: TcGalleryImage,
-}
-
-export interface TcGalleryImages {
-  images: TcGalleryImage[],
-  openImage?: TcGalleryImage,
-}
-
-export interface TcGalleryConfig {
-  backdrop?: boolean,
-  selectable?: boolean,
-  preLoadImages?: boolean,
-  changeRoute?: boolean,
-}
+import { TcAfterClosed, TcGallery, TcGalleryInternal } from '../interfaces/tc-gallery.interface';
+import { TcGalleryConfig } from '../interfaces/tc-gallery-config.interface';
+import { TcGalleryImage, TcGalleryImages, TcGalleryImageSelected } from '../interfaces/tc-gallery-image.interface';
+import { TcGalleryInstance } from '../classes/tc-gallery-instance.class';
 
 @Injectable({
   providedIn: 'root'
@@ -290,11 +194,11 @@ export class TcGalleryService {
     let currentGalleries = this.galleries$.getValue();
     currentGalleries = currentGalleries.map((currentGallery) => {
       if (currentGallery.id === galleryId) {
-        let selectedImages: TcGalleryImage[] = [];
+        let selectedImages: TcGalleryImage[] = [...currentGallery.selectedImages];
         if (imageSelected.selected) {
           selectedImages.push(imageSelected.image);
         } else {
-          selectedImages = selectedImages.filter((image: TcGalleryImage) => image.slug === imageSelected.image.slug);
+          selectedImages = selectedImages.filter((image: TcGalleryImage) => image.slug !== imageSelected.image.slug);
         }
 
         return {

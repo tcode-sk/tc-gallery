@@ -7,34 +7,33 @@ import {
   EventEmitter,
   HostListener,
   Input,
+  OnInit,
   Output,
   Renderer2,
   ViewChild
 } from '@angular/core';
 import { animate, AnimationEvent, query, style, transition, trigger } from '@angular/animations';
 import { NavigationExtras, Router } from '@angular/router';
+import { delay, Subject, takeUntil } from 'rxjs';
+import { JsonPipe } from '@angular/common';
 
+import { TcGalleryService } from '../../services/tc-gallery.service';
+import { ImageLoadedDirective } from '../../directives/image-loaded/image-loaded.directive';
+import { SwipeDirective } from '../../directives/swipe/swipe.directive';
+import { SwipeDirection, SwipeEvent } from '../../directives/swipe/swipe-core.types';
+import { BaseComponent } from '../base/base.component';
+import { TcGallery, TcGalleryInternal } from '../../interfaces/tc-gallery.interface';
 import {
-  TcGallery,
-  TcGalleryConfig,
   TcGalleryImage,
-  TcGalleryImageSelected,
-  TcGalleryInternal,
-  TcGalleryService
-} from '../tc-gallery.service';
-import { ImageLoadedDirective } from '../directives/image-loaded/image-loaded.directive';
-import { SwipeDirective } from '../directives/swipe/swipe.directive';
-import { SwipeDirection, SwipeEvent } from '../directives/swipe/swipe-core.types';
+  TcGalleryImageInternal,
+  TcGalleryImageSelected
+} from '../../interfaces/tc-gallery-image.interface';
+import { TcGalleryConfig } from '../../interfaces/tc-gallery-config.interface';
 
 enum AnimationDirectionEnum {
   LEFT = 'left',
   RIGHT = 'right',
   STOP = 'stop',
-}
-
-enum IsLoadingEnum {
-  LEFT,
-  RIGHT,
 }
 
 @Component({
@@ -43,6 +42,7 @@ enum IsLoadingEnum {
   imports: [
     ImageLoadedDirective,
     SwipeDirective,
+    JsonPipe,
   ],
   templateUrl: './tc-gallery-slides.component.html',
   styleUrl: './tc-gallery-slides.component.scss',
@@ -54,13 +54,13 @@ enum IsLoadingEnum {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TcGallerySlidesComponent implements AfterViewInit {
+export class TcGallerySlidesComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   @Input() set gallery(gallery: TcGalleryInternal) {
     this._gallery = gallery;
 
     this.config = gallery.config;
-    this.images = gallery.gallery.images;
+    this.images = [...gallery.gallery.images];
 
     this.setupFirstImage(gallery.gallery);
     this.setupSlides();
@@ -74,22 +74,14 @@ export class TcGallerySlidesComponent implements AfterViewInit {
   animationDirectionEnum = AnimationDirectionEnum;
 
   show = AnimationDirectionEnum.STOP;
-  slides: TcGalleryImage[] = []
+  slides: TcGalleryImageInternal[] = []
 
   initLazyLoadImages = true;
-  prevIsLoading = false;
-  nextIsLoading = false;
-
-  set currentIndex(index: number) {
-    this._currentIndex = index;
-    this.currentImage.emit(this.images[index]);
-  };
-  get currentIndex(): number {
-    return this._currentIndex;
-  }
 
   config: TcGalleryConfig = {};
   images: TcGalleryImage[] = [];
+
+  isLoading$ = new Subject<number>();
 
   private isAnimated = false;
 
@@ -107,7 +99,17 @@ export class TcGallerySlidesComponent implements AfterViewInit {
     }
   }
 
-  constructor(private renderer: Renderer2, private router: Router, public tcGalleryService: TcGalleryService, private changeDetectorRef: ChangeDetectorRef,) {}
+  constructor(private renderer: Renderer2, private router: Router, public tcGalleryService: TcGalleryService, private changeDetectorRef: ChangeDetectorRef,) {
+    super();
+  }
+
+  set currentIndex(index: number) {
+    this._currentIndex = index;
+    this.currentImage.emit(this.images[index]);
+  };
+  get currentIndex(): number {
+    return this._currentIndex;
+  }
 
   get isPreviousSlideFirstOrHigher(): boolean {
     return this.currentIndex - 1 >= 0;
@@ -117,14 +119,51 @@ export class TcGallerySlidesComponent implements AfterViewInit {
     return this.currentIndex + 1 < this.images.length;
   }
 
+  get prevIsLoading(): boolean {
+    if (!this.config.preLoadImages) {
+      return false;
+    }
+    return !!this.slides[0]?.isLoading && this.slides.length > 1;
+  }
+  get nextIsLoading(): boolean {
+    if (!this.config.preLoadImages) {
+      return false;
+    }
+    return !!this.slides[this.slides.length - 1]?.isLoading && this.slides.length > 1;
+  }
+
+  ngOnInit(): void {
+    if (this.config.preLoadImages) {
+      this.isLoading$.pipe(
+        delay(333),
+        takeUntil(this.takeUntil$)
+      ).subscribe({
+        next: (index: number) => {
+          if (this.slides[index] && !this.slides[index].isLoaded) {
+            this.markIsLoading(index);
+            this.changeDetectorRef.detectChanges();
+          }
+        }
+      });
+    }
+  }
+
   ngAfterViewInit(): void {
-    if (this.currentIndex >= 1) {
+    if (this.currentIndex >= 1 && !this.config.preLoadImages) {
       this.setStyleOnDummySlide(true);
     }
   }
 
   onChangeSelectImage(event: Event, slide: TcGalleryImage): void {
-    this.selectedImage.emit({selected: (event.target as HTMLInputElement).checked, image: slide});
+    const checked = (event.target as HTMLInputElement).checked;
+    this.selectedImage.emit({selected: checked, image: slide});
+
+    this.images = this.images.map((image) => {
+      if (image.slug === slide.slug) {
+        return {...image, selected: checked};
+      }
+      return image;
+    })
   }
 
   onStart(event: AnimationEvent): void {
@@ -138,15 +177,15 @@ export class TcGallerySlidesComponent implements AfterViewInit {
       if (this.show === AnimationDirectionEnum.RIGHT) {
         this.currentIndex = this.currentIndex + 1;
 
-        if (this.isNextSlideNotLast) {
-          this.slides.push(this.images[this.currentIndex + 1]);
-          this.markIsLoading(IsLoadingEnum.RIGHT, true);
-        }
-
         if (this.currentIndex === 1) {
           this.setStyleOnDummySlide(true);
         } else if (this.currentIndex > 1 && this.currentIndex + 1 <= this.images.length) {
           this.slides.shift();
+        }
+
+        if (this.isNextSlideNotLast) {
+          this.slides.push(this.images[this.currentIndex + 1]);
+          this.queueIsLoading(this.slides.length - 1);
         }
       } else if (this.show === AnimationDirectionEnum.LEFT) {
         if (this.isNextSlideNotLast) {
@@ -157,7 +196,7 @@ export class TcGallerySlidesComponent implements AfterViewInit {
 
         if (this.isPreviousSlideFirstOrHigher) {
           this.slides.unshift(this.images[this.currentIndex - 1]);
-          this.markIsLoading(IsLoadingEnum.LEFT, true);
+          this.queueIsLoading(0);
         }
 
         if (this.currentIndex === 0) {
@@ -181,23 +220,25 @@ export class TcGallerySlidesComponent implements AfterViewInit {
   }
 
   lazyLoadImages(index: number): void {
+    this.markIsLoaded(index);
+
     if (this.config.preLoadImages) {
       if (this.initLazyLoadImages) {
+        if (this.currentIndex >= 1) {
+          this.setStyleOnDummySlide(true);
+        }
+
         if (this.isPreviousSlideFirstOrHigher) {
-          this.markIsLoading(IsLoadingEnum.LEFT, true);
           this.slides.unshift(this.images[this.currentIndex - 1]);
+          this.queueIsLoading(0);
         }
 
         if (this.isNextSlideNotLast) {
-          this.markIsLoading(IsLoadingEnum.RIGHT, true);
           this.slides.push(this.images[this.currentIndex + 1]);
+          this.queueIsLoading(this.slides.length - 1);
         }
 
         this.initLazyLoadImages = false;
-      } else if (index === 0) {
-        this.markIsLoading(IsLoadingEnum.LEFT, false);
-      } else if (index === this.slides.length - 1) {
-        this.markIsLoading(IsLoadingEnum.RIGHT, false);
       }
     }
   }
@@ -205,7 +246,9 @@ export class TcGallerySlidesComponent implements AfterViewInit {
   moveImage(direction: AnimationDirectionEnum): void {
     if (
       direction === AnimationDirectionEnum.LEFT && this.currentIndex === 0 ||
-      direction === AnimationDirectionEnum.RIGHT && this.currentIndex + 1 === this.images.length
+      direction === AnimationDirectionEnum.RIGHT && this.currentIndex + 1 === this.images.length ||
+      direction === AnimationDirectionEnum.RIGHT && this.slides.length === 1 ||
+      (this.config.preLoadImages && (direction === AnimationDirectionEnum.LEFT && this.prevIsLoading || direction === AnimationDirectionEnum.RIGHT && this.nextIsLoading))
     ) {
       return;
     }
@@ -213,13 +256,13 @@ export class TcGallerySlidesComponent implements AfterViewInit {
   }
 
   onSwipeEnd(event: SwipeEvent): void {
-    if (event.direction === SwipeDirection.X && event.distance < 0 && Math.abs(event.distance) > 150) {
+    if (event.direction === SwipeDirection.X && event.distance < 0 && Math.abs(event.distance) > 75) {
       this.moveImage(this.animationDirectionEnum.RIGHT);
       this.changeDetectorRef.detectChanges();
-    } else if (event.direction === SwipeDirection.X && event.distance > 0 && Math.abs(event.distance) > 150) {
+    } else if (event.direction === SwipeDirection.X && event.distance > 0 && Math.abs(event.distance) > 75) {
       this.moveImage(this.animationDirectionEnum.LEFT);
       this.changeDetectorRef.detectChanges();
-    } else if (event.direction === SwipeDirection.Y && event.distance > 0 && Math.abs(event.distance) > 150) {
+    } else if (event.direction === SwipeDirection.Y && event.distance > 0 && Math.abs(event.distance) > 75) {
       this.tcGalleryService.closeGallery(this.gallery.id);
     }
   }
@@ -237,30 +280,49 @@ export class TcGallerySlidesComponent implements AfterViewInit {
   }
 
   private setupSlides(): void {
-    let countOfSlidesToLoad = 2;
+    let countOfSlidesToLoad = this.config.preLoadImages ? 1 : 2;
+    let startIndex: number;
 
-    if (this.config.preLoadImages) {
-      countOfSlidesToLoad = 1;
-
-      if (this.isPreviousSlideFirstOrHigher) {
-        this.markIsLoading(IsLoadingEnum.LEFT, true);
-      }
-
-      if (this.isNextSlideNotLast) {
-        this.markIsLoading(IsLoadingEnum.RIGHT, true);
-      }
+    if (!this.config.preLoadImages && this.currentIndex >= 1) {
+      startIndex = this.currentIndex - 1;
+      countOfSlidesToLoad = 3;
+    } else {
+      startIndex = this.currentIndex;
     }
 
-    this.slides = this.images.slice(this.currentIndex, this.currentIndex + countOfSlidesToLoad);
+    this.slides = this.images.slice(startIndex, startIndex + countOfSlidesToLoad).map((image: TcGalleryImage, index) => ({...image, isLoading: true, isLoaded: false}));
   }
 
-  private markIsLoading(direction: IsLoadingEnum, value: boolean): void {
+  private queueIsLoading(index: number): void {
     if (this.config.preLoadImages) {
-      if (direction === IsLoadingEnum.LEFT) {
-        this.prevIsLoading = value;
-      } else if (direction === IsLoadingEnum.RIGHT) {
-        this.nextIsLoading = value;
+      this.isLoading$.next(index);
+    }
+  }
+
+  private markIsLoading(index: number): void {
+    this.slides = this.slides.map((slide, slideIndex) => {
+      if (slideIndex === index) {
+        return {
+          ...slide,
+          isLoading: true,
+        }
       }
+      return slide;
+    })
+  }
+
+  private markIsLoaded(index: number): void {
+    if (this.slides[index]) {
+      this.slides = this.slides.map((slide, slideIndex) => {
+        if (slideIndex === index) {
+          return {
+            ...slide,
+            isLoading: false,
+            isLoaded: true,
+          }
+        }
+        return slide;
+      })
     }
   }
 

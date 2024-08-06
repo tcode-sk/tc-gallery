@@ -1,10 +1,11 @@
 import { Component, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { TcGalleryComponent, TcGalleryService } from 'tc-gallery';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 
 import { IMAGES_MOCK } from './mock/images.mock';
+import { TcGalleryComponent } from '../../projects/tc-gallery/src/lib/components/tc-gallery/tc-gallery.component';
+import { TcGalleryService } from '../../projects/tc-gallery/src/lib/services/tc-gallery.service';
 
 @Component({
   selector: 'app-root',
