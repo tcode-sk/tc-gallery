@@ -26,6 +26,8 @@ export class TcGalleryService {
     trapFocusAutoCapture: false,
   }
 
+  private galleriesInstances$ = new BehaviorSubject<TcGalleryInstance[]>([]);
+
   private renderer: Renderer2;
 
   constructor(private router: Router, private rendererFactory: RendererFactory2, @Inject(DOCUMENT) private document: Document) {
@@ -68,7 +70,14 @@ export class TcGalleryService {
     this.galleries$.next(currentGalleries);
     this.galleriesInternal$.next(currentGalleriesInternal);
 
-    return new TcGalleryInstance(gallery.id, this);
+    const galleryInstance = new TcGalleryInstance(gallery.id, this);
+    this.galleriesInstances$.next([...this.galleriesInstances$.value, galleryInstance]);
+
+    return galleryInstance;
+  }
+
+  getGalleryInstance(galleryId: number): TcGalleryInstance | undefined {
+    return this.galleriesInstances$.value.find((galleryInstance) => galleryInstance.id === galleryId);
   }
 
   openGallery(idOrGallery: number | TcGallery, openImage?: {tcgImage?: TcGalleryImage, src?: string}): void {
@@ -181,15 +190,18 @@ export class TcGalleryService {
     if (galleryIndex >= 0) {
       const galleries = this.galleries$.value;
       const galleriesInternal = this.galleriesInternal$.value;
+      const galleriesInstances = this.galleriesInstances$.value;
       const galleryInternal = galleriesInternal[galleryIndex];
 
       galleryInternal.afterClosedSubject.complete();
 
       galleries.splice(galleryIndex, 1);
       galleriesInternal.splice(galleryIndex, 1);
+      galleriesInstances.splice(galleryIndex, 1);
 
       this.galleries$.next(galleries);
       this.galleriesInternal$.next(galleriesInternal);
+      this.galleriesInstances$.next(galleriesInstances);
     }
   }
 
