@@ -177,6 +177,14 @@
   }
 }
 
+.tc-gallery__controls {
+  display: flex;
+  gap: .25rem;
+  position: absolute;
+  top: .5rem;
+  right: .5rem;
+}
+
 .tc-gallery__btn {
   /* button reset styles */
   border: none;
@@ -188,7 +196,6 @@
   background: var(--tc-background);
   border-radius: .25rem;
   padding: .5rem;
-  position: absolute;
   cursor: pointer;
   &:disabled {
     background: var(--tc-background-disabled);
@@ -198,6 +205,7 @@
 }
 
 .tc-gallery__btn--arrow {
+  position: absolute;
   top: 50%;
   transform: translateY(-50%);
 }
@@ -207,11 +215,6 @@
 }
 
 .tc-gallery__btn--next {
-  right: .5rem;
-}
-
-.tc-gallery__btn--close {
-  top: .5rem;
   right: .5rem;
 }
 
