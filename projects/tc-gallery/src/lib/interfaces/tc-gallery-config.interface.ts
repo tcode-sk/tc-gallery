@@ -3,4 +3,7 @@ export interface TcGalleryConfig {
   selectable?: boolean,
   preLoadImages?: boolean,
   changeRoute?: boolean,
+  disableRightClick?: boolean,
+  enableDownload?: boolean,
+  trapFocusAutoCapture?: boolean,
 }

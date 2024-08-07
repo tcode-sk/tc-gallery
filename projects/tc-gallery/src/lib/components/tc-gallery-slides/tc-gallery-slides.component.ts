@@ -6,16 +6,18 @@ import {
   ElementRef,
   EventEmitter,
   HostListener,
+  Inject,
   Input,
   OnInit,
   Output,
   Renderer2,
-  ViewChild
+  ViewChild,
 } from '@angular/core';
 import { animate, AnimationEvent, query, style, transition, trigger } from '@angular/animations';
 import { NavigationExtras, Router } from '@angular/router';
 import { delay, Subject, takeUntil } from 'rxjs';
-import { JsonPipe } from '@angular/common';
+import { DOCUMENT, JsonPipe } from '@angular/common';
+import { CdkTrapFocus } from '@angular/cdk/a11y';
 
 import { TcGalleryService } from '../../services/tc-gallery.service';
 import { ImageLoadedDirective } from '../../directives/image-loaded/image-loaded.directive';
@@ -29,6 +31,8 @@ import {
   TcGalleryImageSelected
 } from '../../interfaces/tc-gallery-image.interface';
 import { TcGalleryConfig } from '../../interfaces/tc-gallery-config.interface';
+import { DisableRightClickDirective } from '../../directives/right-click/right-click.directive';
+import { FullscreenDirective, FullscreenTransition } from '../../directives/fullscreen/fullscreen.directive';
 
 enum AnimationDirectionEnum {
   LEFT = 'left',
@@ -43,6 +47,9 @@ enum AnimationDirectionEnum {
     ImageLoadedDirective,
     SwipeDirective,
     JsonPipe,
+    DisableRightClickDirective,
+    FullscreenDirective,
+    CdkTrapFocus,
   ],
   templateUrl: './tc-gallery-slides.component.html',
   styleUrl: './tc-gallery-slides.component.scss',
@@ -75,6 +82,7 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
 
   show = AnimationDirectionEnum.STOP;
   slides: TcGalleryImageInternal[] = []
+  currentSlideIndex = 0;
 
   initLazyLoadImages = true;
 
@@ -83,13 +91,17 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
 
   isLoading$ = new Subject<number>();
 
+  isFullscreen = false;
+
   private isAnimated = false;
 
   private _currentIndex = 0;
   private _gallery!: TcGalleryInternal;
   private firstRouteNavigation = false;
+  private wasFocused = false;
 
   @ViewChild('dummySlide') dummySlide: ElementRef | undefined;
+  @ViewChild(FullscreenDirective) fullscreen!: FullscreenDirective;
 
   @HostListener('document:keydown', ['$event']) handleKeyboardEvent(event: KeyboardEvent): void {
     if (event.key === 'ArrowLeft') {
@@ -99,7 +111,36 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
     }
   }
 
-  constructor(private renderer: Renderer2, private router: Router, public tcGalleryService: TcGalleryService, private changeDetectorRef: ChangeDetectorRef,) {
+  @HostListener('document:keydown.tab', ['$event']) onTabKey(event: KeyboardEvent): void {
+    if (!this.config.trapFocusAutoCapture && !this.wasFocused) {
+      let focusableElements = this.elementRef.nativeElement.querySelectorAll(
+        'button.tc-gallery__btn--arrow:not([disabled])'
+      );
+
+      if (focusableElements.length === 0) {
+        focusableElements = this.elementRef.nativeElement.querySelectorAll(
+          'input:not([disabled])'
+        );
+      }
+
+      if (focusableElements.length === 0) {
+        focusableElements = this.elementRef.nativeElement.querySelectorAll(
+          'button:not([disabled])'
+        );
+      }
+
+      if (focusableElements.length > 0) {
+        focusableElements[0].focus();
+        event.preventDefault();
+      }
+
+      this.wasFocused = true;
+    }
+  }
+
+  constructor(private renderer: Renderer2, private router: Router, public tcGalleryService: TcGalleryService,
+              private changeDetectorRef: ChangeDetectorRef, @Inject(DOCUMENT) private document: Document,
+              private elementRef: ElementRef) {
     super();
   }
 
@@ -183,6 +224,8 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
           this.slides.shift();
         }
 
+        this.currentSlideIndex = this.slides.length - 1;
+
         if (this.isNextSlideNotLast) {
           this.slides.push(this.images[this.currentIndex + 1]);
           this.queueIsLoading(this.slides.length - 1);
@@ -195,8 +238,11 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
         this.currentIndex = this.currentIndex - 1;
 
         if (this.isPreviousSlideFirstOrHigher) {
+          this.currentSlideIndex = this.slides.length - 1;
           this.slides.unshift(this.images[this.currentIndex - 1]);
           this.queueIsLoading(0);
+        } else {
+          this.currentSlideIndex = 0;
         }
 
         if (this.currentIndex === 0) {
@@ -233,6 +279,8 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
           this.queueIsLoading(0);
         }
 
+        this.currentSlideIndex = this.slides.length - 1;
+
         if (this.isNextSlideNotLast) {
           this.slides.push(this.images[this.currentIndex + 1]);
           this.queueIsLoading(this.slides.length - 1);
@@ -265,6 +313,24 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
     } else if (event.direction === SwipeDirection.Y && event.distance > 0 && Math.abs(event.distance) > 75) {
       this.tcGalleryService.closeGallery(this.gallery.id);
     }
+  }
+
+  toggleFullscreen(): void {
+    this.fullscreen.toggle();
+  }
+
+  onFullscreenChange(event: FullscreenTransition): void {
+    this.isFullscreen = event.isFullscreen;
+  }
+
+  downloadImage(): void {
+    const anchorElement = this.document.createElement('a');
+    anchorElement.href = this.images[this.currentIndex].src;
+    anchorElement.download = this.images[this.currentIndex].name!;
+
+    this.document.body.appendChild(anchorElement);
+    anchorElement.click();
+    this.document.body.removeChild(anchorElement);
   }
 
   private setupFirstImage(gallery: TcGallery['gallery']): void {

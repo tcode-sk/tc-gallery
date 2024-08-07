@@ -46,7 +46,7 @@ export class AppComponent implements OnInit {
     const tcGalleryTest = this.tcGalleryService
       .registerGallery({
         images: IMAGES_MOCK,
-      }, {backdrop: true, preLoadImages: true, selectable: true});
+      }, {backdrop: true, preLoadImages: true, selectable: true, disableRightClick: true});
 
     tcGalleryTest
       .currentImageChange()

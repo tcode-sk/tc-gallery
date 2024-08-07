@@ -1,7 +1,14 @@
 <ng-container *ngIf="(galleriesInternal$ | async) as galleries">
   @if (galleries.length) {
     @for (gallery of galleries; track gallery.id) {
-      <div class="tc-gallery" [class.tc-gallery--backdrop]="gallery.config.backdrop" (click)="backdrop($event)">
+      <div class="tc-gallery"
+           [class.tc-gallery--backdrop]="gallery.config.backdrop"
+           tcDisableRightClick
+           [useDisableRightClick]="!!gallery.config.disableRightClick"
+           (click)="backdrop($event)"
+           role="dialog"
+           aria-labelledby="tc-gallery"
+           aria-modal="true">
         <div [attr.data-tc-gallery-id]="gallery.id" class="tc-gallery__backdrop">
           <lib-tc-gallery-slides [gallery]="gallery"
                                  (selectedImage)="tcGalleryService.selectImage(gallery.id, $event)"

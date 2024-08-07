@@ -21,6 +21,9 @@ export class TcGalleryService {
     selectable: false,
     preLoadImages: true,
     changeRoute: true,
+    disableRightClick: false,
+    enableDownload: true,
+    trapFocusAutoCapture: false,
   }
 
   private renderer: Renderer2;

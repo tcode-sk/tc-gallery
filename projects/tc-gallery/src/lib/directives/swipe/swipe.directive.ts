@@ -5,7 +5,7 @@ import { SwipeEvent } from './swipe-core.types';
 import { createSwipeSubscription } from './swipe-core';
 
 @Directive({
-  selector: '[ngSwipe]',
+  selector: '[tcSwipe]',
   standalone: true,
 })
 export class SwipeDirective implements OnInit, OnDestroy {

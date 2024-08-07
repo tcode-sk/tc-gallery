@@ -2,17 +2,22 @@ import {
   AfterContentInit,
   ChangeDetectionStrategy,
   Component,
-  HostListener, OnDestroy,
+  HostListener,
+  OnDestroy,
+  ViewEncapsulation,
 } from '@angular/core';
 import { AsyncPipe, NgIf } from '@angular/common';
 import { filter, map, Observable, takeUntil } from 'rxjs';
 import { ActivatedRoute, NavigationEnd, NavigationStart, Router } from '@angular/router';
+import { A11yModule } from '@angular/cdk/a11y';
 
 import { BaseComponent } from '../base/base.component';
 import { TcGalleryService } from '../../services/tc-gallery.service';
 import { TcGallerySlidesComponent } from '../tc-gallery-slides/tc-gallery-slides.component';
 import { TcGallery, TcGalleryInternal } from '../../interfaces/tc-gallery.interface';
 import { TcGalleryImage } from '../../interfaces/tc-gallery-image.interface';
+import { DisableRightClickDirective } from '../../directives/right-click/right-click.directive';
+import { FullscreenDirective } from '../../directives/fullscreen/fullscreen.directive';
 
 @Component({
   selector: 'tc-gallery',
@@ -21,10 +26,14 @@ import { TcGalleryImage } from '../../interfaces/tc-gallery-image.interface';
     AsyncPipe,
     NgIf,
     TcGallerySlidesComponent,
+    DisableRightClickDirective,
+    FullscreenDirective,
+    A11yModule,
   ],
   templateUrl: 'tc-gallery.component.html',
-  styleUrl: 'tc-gallery.component.scss',
+  styleUrls: ['tc-gallery.component.scss', '../../styles/tc-gallery.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
 })
 export class TcGalleryComponent extends BaseComponent implements AfterContentInit, OnDestroy {
 
