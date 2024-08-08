@@ -22,7 +22,7 @@
   }
 }
 
-:host {
+tc-gallery {
   font-family: sans-serif;
   font-size: 100%;
   line-height: 1.5; /* 1 */
@@ -30,9 +30,14 @@
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
 
   *, *::before, *::after {
     box-sizing: inherit;
+  }
+
+  img, button, input {
+    touch-action: manipulation;
   }
 
   img {

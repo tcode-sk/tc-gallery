@@ -21,7 +21,8 @@ export interface SwipeEvent {
 }
 
 export interface SwipeSubscriptionConfig {
-  domElement: HTMLElement;
+  document: Document;
+  elementRef: HTMLElement;
   onSwipeMove?: (event: SwipeEvent) => void;
   onSwipeEnd?: (event: SwipeEvent) => void;
 }

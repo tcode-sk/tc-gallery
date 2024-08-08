@@ -1,5 +1,6 @@
-import { Directive, ElementRef, EventEmitter, NgZone, OnDestroy, OnInit, Output } from '@angular/core';
+import { Directive, ElementRef, EventEmitter, Inject, NgZone, OnDestroy, OnInit, Output } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { DOCUMENT } from '@angular/common';
 
 import { SwipeEvent } from './swipe-core.types';
 import { createSwipeSubscription } from './swipe-core';
@@ -16,13 +17,15 @@ export class SwipeDirective implements OnInit, OnDestroy {
 
   constructor(
     private elementRef: ElementRef,
-    private zone: NgZone
+    private zone: NgZone,
+    @Inject(DOCUMENT) private document: Document,
   ) {}
 
   ngOnInit() {
     this.zone.runOutsideAngular(() => {
       this.swipeSubscription = createSwipeSubscription({
-        domElement: this.elementRef.nativeElement,
+        document: this.document,
+        elementRef: this.elementRef.nativeElement,
         onSwipeMove: (swipeMoveEvent: SwipeEvent) => this.swipeMove.emit(swipeMoveEvent),
         onSwipeEnd: (swipeEndEvent: SwipeEvent) => this.swipeEnd.emit(swipeEndEvent)
       });

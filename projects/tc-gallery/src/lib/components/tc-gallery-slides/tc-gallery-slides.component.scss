@@ -37,6 +37,13 @@
   }
 }
 
+.tc-gallery__image {}
+
+.tc-gallery__image--disable-touch {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+}
+
 .tc-gallery__caption {
   background: var(--tc-background);
   line-height: 1.25;

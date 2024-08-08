@@ -1,10 +1,10 @@
-import { fromEvent, Observable, race, Subscription } from 'rxjs';
+import { filter, fromEvent, Observable, race, Subscription } from 'rxjs';
 import { elementAt, map, switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { SwipeCoordinates, SwipeDirection, SwipeEvent, SwipeStartEvent, SwipeSubscriptionConfig } from './swipe-core.types';
 
-export function createSwipeSubscription({ domElement, onSwipeMove, onSwipeEnd }: SwipeSubscriptionConfig): Subscription {
-  if (!(domElement instanceof HTMLElement)) {
+export function createSwipeSubscription({ document, elementRef, onSwipeMove, onSwipeEnd }: SwipeSubscriptionConfig): Subscription {
+  if (!(elementRef instanceof HTMLElement)) {
     throw new Error('Provided domElement should be an instance of HTMLElement');
   }
 
@@ -12,10 +12,15 @@ export function createSwipeSubscription({ domElement, onSwipeMove, onSwipeEnd }:
     throw new Error('At least one of the following swipe event handler functions should be provided: onSwipeMove and/or onSwipeEnd');
   }
 
-  const touchStarts$ = fromEvent<TouchEvent>(domElement, 'touchstart').pipe(map(getTouchCoordinates));
-  const touchMoves$ = fromEvent<TouchEvent>(domElement, 'touchmove').pipe(map(getTouchCoordinates));
-  const touchEnds$ = fromEvent<TouchEvent>(domElement, 'touchend').pipe(map(getTouchCoordinates));
-  const touchCancels$ = fromEvent<TouchEvent>(domElement, 'touchcancel');
+  const edgeSwipeThreshold = 25;
+
+  const touchStarts$ = fromEvent<TouchEvent>(elementRef, 'touchstart').pipe(
+    map(getTouchCoordinates),
+    filter((touchStartEvent: SwipeCoordinates) => !document.defaultView || !(touchStartEvent.x <= edgeSwipeThreshold || touchStartEvent.x >= document.defaultView.innerWidth - edgeSwipeThreshold)),
+  );
+  const touchMoves$ = fromEvent<TouchEvent>(elementRef, 'touchmove').pipe(map(getTouchCoordinates));
+  const touchEnds$ = fromEvent<TouchEvent>(elementRef, 'touchend').pipe(map(getTouchCoordinates));
+  const touchCancels$ = fromEvent<TouchEvent>(elementRef, 'touchcancel');
 
   const touchStartsWithDirection$: Observable<SwipeStartEvent> = touchStarts$.pipe(
     switchMap((touchStartEvent: SwipeCoordinates) => touchMoves$.pipe(
@@ -41,7 +46,7 @@ export function createSwipeSubscription({ domElement, onSwipeMove, onSwipeEnd }:
           map(touchEndEvent => getTouchDistance(touchStartEvent, touchEndEvent)),
           tap((coordinates: SwipeCoordinates) => {
             if (typeof onSwipeEnd !== 'function') { return; }
-            onSwipeEnd(getSwipeEvent(touchStartEvent, coordinates, domElement));
+            onSwipeEnd(getSwipeEvent(touchStartEvent, coordinates, elementRef));
           })
         ),
         touchCancels$
@@ -69,18 +74,18 @@ function getTouchDirection(startCoordinates: SwipeCoordinates, moveCoordinates: 
   return Math.abs(x) < Math.abs(y) ? SwipeDirection.Y : SwipeDirection.X;
 }
 
-function getSwipeEvent(touchStartEvent: SwipeStartEvent, coordinates: SwipeCoordinates, domElement?: HTMLElement): SwipeEvent  {
+function getSwipeEvent(touchStartEvent: SwipeStartEvent, coordinates: SwipeCoordinates, elementRef?: HTMLElement): SwipeEvent  {
   return {
     direction: touchStartEvent.direction,
     distance: coordinates[touchStartEvent.direction],
     percentage: 0,
-    // percentage: getPercentage(touchStartEvent.direction, coordinates[touchStartEvent.direction], domElement),
+    // percentage: getPercentage(touchStartEvent.direction, coordinates[touchStartEvent.direction], elementRef),
   };
 }
 
-function getPercentage(direction: SwipeDirection, distance: number, domElement: HTMLElement | undefined): number {
-  if (domElement) {
-    const currentBoundingClientRect = domElement.getBoundingClientRect()
+function getPercentage(direction: SwipeDirection, distance: number, elementRef: HTMLElement | undefined): number {
+  if (elementRef) {
+    const currentBoundingClientRect = elementRef.getBoundingClientRect()
     if (direction === SwipeDirection.X) {
       return (Math.abs(distance) - currentBoundingClientRect.left) / currentBoundingClientRect.width * 100;
     } else {

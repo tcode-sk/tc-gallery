@@ -33,12 +33,8 @@ import {
 import { TcGalleryConfig } from '../../interfaces/tc-gallery-config.interface';
 import { DisableRightClickDirective } from '../../directives/right-click/right-click.directive';
 import { FullscreenDirective, FullscreenTransition } from '../../directives/fullscreen/fullscreen.directive';
-
-enum AnimationDirectionEnum {
-  LEFT = 'left',
-  RIGHT = 'right',
-  STOP = 'stop',
-}
+import { AnimationDirectionEnum, AnimationLifeCycleEnum } from '../../enums/animation.enum';
+import { AnimationEventInterface } from '../../interfaces/animation-event.interface';
 
 @Component({
   selector: 'lib-tc-gallery-slides',
@@ -94,6 +90,7 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
   isFullscreen = false;
 
   private isAnimated = false;
+  private animationEvent$ = new Subject<AnimationEventInterface>();
 
   private _currentIndex = 0;
   private _gallery!: TcGalleryInternal;
@@ -139,7 +136,7 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
   }
 
   constructor(private renderer: Renderer2, private router: Router, public tcGalleryService: TcGalleryService,
-              private changeDetectorRef: ChangeDetectorRef, @Inject(DOCUMENT) private document: Document,
+              private changeDetectorRef: ChangeDetectorRef, @Inject(DOCUMENT) public document: Document,
               private elementRef: ElementRef) {
     super();
   }
@@ -187,6 +184,15 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
         }
       });
     }
+
+    this.animationEvent$.pipe(takeUntil(this.takeUntil$)).subscribe({next: (animationEvent: AnimationEventInterface) => {
+      if (animationEvent.animationLifeCycle === AnimationLifeCycleEnum.START) {
+        this.isAnimated = true;
+      } else if (animationEvent.animationLifeCycle === AnimationLifeCycleEnum.END) {
+        this.onAnimationDone();
+        this.isAnimated = false;
+      }
+    }})
   }
 
   ngAfterViewInit(): void {
@@ -205,64 +211,6 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
       }
       return image;
     })
-  }
-
-  onStart(event: AnimationEvent): void {
-    if (this.isAnimating(event)) {
-      this.isAnimated = true;
-    }
-  }
-
-  onDone(event: AnimationEvent): void {
-    if (this.isAnimating(event)) {
-      if (this.show === AnimationDirectionEnum.RIGHT) {
-        this.currentIndex = this.currentIndex + 1;
-
-        if (this.currentIndex === 1) {
-          this.setStyleOnDummySlide(true);
-        } else if (this.currentIndex > 1 && this.currentIndex + 1 <= this.images.length) {
-          this.slides.shift();
-        }
-
-        this.currentSlideIndex = this.slides.length - 1;
-
-        if (this.isNextSlideNotLast) {
-          this.slides.push(this.images[this.currentIndex + 1]);
-          this.queueIsLoading(this.slides.length - 1);
-        }
-      } else if (this.show === AnimationDirectionEnum.LEFT) {
-        if (this.isNextSlideNotLast) {
-          this.slides.pop();
-        }
-
-        this.currentIndex = this.currentIndex - 1;
-
-        if (this.isPreviousSlideFirstOrHigher) {
-          this.currentSlideIndex = this.slides.length - 1;
-          this.slides.unshift(this.images[this.currentIndex - 1]);
-          this.queueIsLoading(0);
-        } else {
-          this.currentSlideIndex = 0;
-        }
-
-        if (this.currentIndex === 0) {
-          this.setStyleOnDummySlide(false);
-        }
-      }
-
-      if (this.config.changeRoute) {
-        const queryParams: NavigationExtras = {
-          queryParams: { tcg: this.images[this.currentIndex].slug },
-          queryParamsHandling: 'merge',
-          replaceUrl: this.firstRouteNavigation,
-        };
-        this.firstRouteNavigation = true;
-
-        this.router.navigate([], queryParams);
-      }
-      this.isAnimated = false;
-      this.show = AnimationDirectionEnum.STOP;
-    }
   }
 
   lazyLoadImages(index: number): void {
@@ -331,6 +279,69 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
     this.document.body.appendChild(anchorElement);
     anchorElement.click();
     this.document.body.removeChild(anchorElement);
+  }
+
+  onStart(event: AnimationEvent): void {
+    if (this.isAnimating(event)) {
+      this.animationEvent$.next({animationEvent: event, animationLifeCycle: AnimationLifeCycleEnum.START});
+    }
+  }
+
+  onDone(event: AnimationEvent): void {
+    if (this.isAnimating(event)) {
+      this.animationEvent$.next({animationEvent: event, animationLifeCycle: AnimationLifeCycleEnum.END});
+    }
+  }
+
+  private onAnimationDone(): void {
+    if (this.show === AnimationDirectionEnum.RIGHT) {
+      this.currentIndex = this.currentIndex + 1;
+
+      if (this.currentIndex === 1) {
+        this.setStyleOnDummySlide(true);
+      } else if (this.currentIndex > 1 && this.currentIndex + 1 <= this.images.length) {
+        this.slides.shift();
+      }
+
+      this.currentSlideIndex = this.slides.length - 1;
+
+      if (this.isNextSlideNotLast) {
+        this.slides.push(this.images[this.currentIndex + 1]);
+        this.queueIsLoading(this.slides.length - 1);
+      }
+    } else if (this.show === AnimationDirectionEnum.LEFT) {
+      if (this.isNextSlideNotLast) {
+        this.slides.pop();
+      }
+
+      this.currentIndex = this.currentIndex - 1;
+
+      if (this.isPreviousSlideFirstOrHigher) {
+        this.currentSlideIndex = this.slides.length - 1;
+        this.slides.unshift(this.images[this.currentIndex - 1]);
+        this.queueIsLoading(0);
+      } else {
+        this.currentSlideIndex = 0;
+      }
+
+      if (this.currentIndex === 0) {
+        this.setStyleOnDummySlide(false);
+      }
+    }
+
+    if (this.config.changeRoute) {
+      console.log('onDone - changeRoute to: ', this.images[this.currentIndex].slug);
+      const queryParams: NavigationExtras = {
+        queryParams: { tcg: this.images[this.currentIndex].slug },
+        queryParamsHandling: 'merge',
+        replaceUrl: this.firstRouteNavigation,
+      };
+      this.firstRouteNavigation = true;
+
+      this.router.navigate([], queryParams);
+    }
+
+    this.show = AnimationDirectionEnum.STOP;
   }
 
   private setupFirstImage(gallery: TcGallery['gallery']): void {
