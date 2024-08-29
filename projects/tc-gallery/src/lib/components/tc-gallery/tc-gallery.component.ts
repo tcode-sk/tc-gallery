@@ -64,7 +64,7 @@ export class TcGalleryComponent extends BaseComponent implements AfterContentIni
         if (galleryInternal && !galleryInternal.visible) {
           const galleryImage = gallery.gallery.images.find((image: TcGalleryImage) => image.slug === this.activatedRoute.snapshot.queryParams['tcg']);
           if (galleryImage) {
-            this.tcGalleryService.openGallery(gallery.id, {tcgImage: galleryImage});
+            this.tcGalleryService.openGallery(gallery.id, {tcImage: galleryImage});
           }
         }
       });

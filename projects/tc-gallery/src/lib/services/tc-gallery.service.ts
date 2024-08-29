@@ -24,6 +24,7 @@ export class TcGalleryService {
     disableRightClick: false,
     enableDownload: true,
     trapFocusAutoCapture: false,
+    showImageName: false,
   }
 
   private galleriesInstances$ = new BehaviorSubject<TcGalleryInstance[]>([]);
@@ -80,7 +81,7 @@ export class TcGalleryService {
     return this.galleriesInstances$.value.find((galleryInstance) => galleryInstance.id === galleryId);
   }
 
-  openGallery(idOrGallery: number | TcGallery, openImage?: {tcgImage?: TcGalleryImage, src?: string}): void {
+  openGallery(idOrGallery: number | TcGalleryInstance, openImage?: {tcImage?: TcGalleryImage, src?: string}): void {
     const galleryId = this.getGalleryId(idOrGallery);
 
     const currentGalleriesInternal = this.galleriesInternal$.getValue()
@@ -88,8 +89,8 @@ export class TcGalleryService {
         if (galleryInternal.id === galleryId) {
           if (openImage) {
             let currentImage: TcGalleryImage | undefined;
-            if (openImage.tcgImage) {
-              currentImage = openImage.tcgImage;
+            if (openImage.tcImage) {
+              currentImage = openImage.tcImage;
             } else {
               const foundCurrentImage = galleryInternal.gallery.images.find((image: TcGalleryImage) => image.src === openImage.src);
               if (foundCurrentImage) {
@@ -120,13 +121,13 @@ export class TcGalleryService {
   }
 
   closeLatestGallery(): void {
-    const latestGallery = this.galleries$.value.at(-1);
+    const latestGallery = this.galleriesInstances$.value.filter((galleryInstance) => galleryInstance.isOpen).at(-1);
     if (latestGallery) {
       this.closeGallery(latestGallery);
     }
   }
 
-  closeGallery(idOrGallery: number | TcGallery): void {
+  closeGallery(idOrGallery: number | TcGalleryInstance): void {
     this.renderer.setStyle(this.document.body, 'overflow', 'auto');
     const galleryId = this.getGalleryId(idOrGallery);
 
@@ -183,7 +184,7 @@ export class TcGalleryService {
       })
   }
 
-  deregisterGallery(idOrGallery: number | TcGallery): void {
+  deregisterGallery(idOrGallery: number | TcGalleryInstance): void {
     const galleryId = this.getGalleryId(idOrGallery);
 
     const galleryIndex = this.galleries$.value.findIndex((gallery) => gallery.id === galleryId);
@@ -245,7 +246,7 @@ export class TcGalleryService {
     this.galleries$.next(currentGalleries);
   }
 
-  private getGalleryId(idOrGallery: number | TcGallery): number {
+  private getGalleryId(idOrGallery: number | TcGalleryInstance): number {
     if (typeof idOrGallery === 'number') {
       return idOrGallery;
     }

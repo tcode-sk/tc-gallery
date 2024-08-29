@@ -1,11 +1,14 @@
-import { Component, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { Subject, takeUntil } from 'rxjs';
 
 import { IMAGES_MOCK } from './mock/images.mock';
 import { TcGalleryComponent } from '../../projects/tc-gallery/src/lib/components/tc-gallery/tc-gallery.component';
 import { TcGalleryService } from '../../projects/tc-gallery/src/lib/services/tc-gallery.service';
+import { TcGalleryImage } from '../../projects/tc-gallery/src/lib/interfaces/tc-gallery-image.interface';
+import { TcAfterClosed } from '../../projects/tc-gallery/src/lib/interfaces/tc-gallery.interface';
+import { TcGalleryInstance } from '../../projects/tc-gallery/src/lib/classes/tc-gallery-instance.class';
 
 @Component({
   selector: 'app-root',
@@ -15,61 +18,70 @@ import { TcGalleryService } from '../../projects/tc-gallery/src/lib/services/tc-
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {
-  title = 'tc-gallery-test-app';
 
-  form = this.fb.group({
-    test: ''
-  })
+  form = this.fb.nonNullable.group({
+    backdrop: true,
+    selectable: false,
+    preLoadImages: true,
+    changeRoute: true,
+    disableRightClick: false,
+    enableDownload: true,
+    trapFocusAutoCapture: false,
+    showImageName: false,
+  });
 
-  tcGalleryTestId: number | undefined;
+  private tcGalleryInstance: TcGalleryInstance | undefined;
+  private unsubscribeAll$ = new Subject<void>();
 
-  @ViewChild('test') test: ViewContainerRef | undefined;
-
-  constructor(private tcGalleryService: TcGalleryService, private fb: FormBuilder, private http: HttpClient) {}
+  constructor(private tcGalleryService: TcGalleryService, private fb: FormBuilder) {}
 
   ngOnInit(): void {
-    // @ToDo striky - bezi's tutorial code learning
-    // this.form.get('test')?.valueChanges.pipe(
-    // of(1,2,3).pipe(
-    //   tap((value) => console.log(value)),
-    //   concatMap((value) => {
-    //     console.log('http: ', value);
-    //     return this.http.get(`https://cat-fact.herokuapp.com/facts/?value=${value}`)
-    //   }),
-    //   // catchError(() => of(null))
-    // ).subscribe({
-    //   next: (value) => console.log('next: ' + value),
-    //   complete: () => console.log('complete: '),
-    //   error: (value: any) => console.log('error: ' + value),
-    // })
-
-    const tcGalleryTest = this.tcGalleryService
-      .registerGallery({
-        images: IMAGES_MOCK,
-      }, {backdrop: true, preLoadImages: true, selectable: true, disableRightClick: true});
-
-    tcGalleryTest
-      .currentImageChange()
-      .subscribe({next: (galleryImage) => console.log('current image: ', galleryImage)});
-
-    tcGalleryTest
-      .selectImageChange()
-      .subscribe({next: (galleryImages) => console.log('selected images: ', galleryImages)});
-
-    tcGalleryTest
-      .afterClosed()
-      .subscribe({next: (afterClosed) => console.log('closed: ', afterClosed)});
-
-    this.tcGalleryTestId = tcGalleryTest.id;
+    this.initGallery();
+    this.formChanges();
   }
 
   openGallery(): void {
-    if (this.tcGalleryTestId !== undefined) {
-      this.tcGalleryService.openGallery(this.tcGalleryTestId);
+    if (this.tcGalleryInstance && this.tcGalleryInstance.id !== undefined) {
+      this.tcGalleryService.openGallery(this.tcGalleryInstance.id);
     }
   }
 
-  createRequest(value: string): void {
+  private formChanges(): void {
+    this.form.valueChanges.subscribe({
+      next: ()  => {
+        this.deregisterGallery();
+        this.initGallery();
+      }
+    });
+  }
 
+  private initGallery(): void {
+    this.tcGalleryInstance = this.tcGalleryService
+      .registerGallery({
+        images: IMAGES_MOCK,
+      }, this.form.getRawValue());
+
+
+    this.tcGalleryInstance
+      .currentImageChange()
+      .pipe(takeUntil(this.unsubscribeAll$))
+      .subscribe({next: (tcGalleryImage: TcGalleryImage) => console.log('current image: ', tcGalleryImage)});
+
+    this.tcGalleryInstance
+      .selectImageChange()
+      .pipe(takeUntil(this.unsubscribeAll$))
+      .subscribe({next: (galleryImages: TcGalleryImage[]) => console.log('selected images: ', galleryImages)});
+
+    this.tcGalleryInstance
+      .afterClosed()
+      .pipe(takeUntil(this.unsubscribeAll$))
+      .subscribe({next: (afterClosed: TcAfterClosed) => console.log('closed: ', afterClosed)});
+  }
+
+  private deregisterGallery(): void {
+    if (this.tcGalleryInstance) {
+      this.tcGalleryService.deregisterGallery(this.tcGalleryInstance?.id);
+      this.unsubscribeAll$.next();
+    }
   }
 }

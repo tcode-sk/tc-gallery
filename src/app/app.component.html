@@ -1,13 +1,54 @@
-<h1>Testing Tcode gallery</h1>
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. A adipisci amet consectetur dolor dolorem doloribus earum eius enim esse excepturi exercitationem expedita hic, itaque laborum nam nesciunt nihil nulla odio provident quas qui quibusdam quidem, quisquam rem reprehenderit sapiente sequi similique tempora totam vero? Blanditiis deserunt et neque perspiciatis repudiandae.</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam eligendi expedita in, perspiciatis provident quam tempore tenetur vel? Accusantium aliquam eius facilis ipsam iste nobis ut. Eaque illo ipsum minus!</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Consequuntur dicta nobis quos. Ab dicta earum laboriosam porro quia quisquam unde.</p>
-<tc-gallery></tc-gallery>
-<router-outlet />
-<button (click)="openGallery()">open dialog</button>
-<ng-template #test>
-  <h2>ABCDEFU</h2>
-</ng-template>
-<form [formGroup]="form">
-  <input formControlName="test">
+<h1 class="text-center">tCode Gallery - Simple Angular touch image gallery</h1>
+
+<p class="text-center">
+  <em>Import, use, enjoy!</em>
+  <br>
+</p>
+
+<p class="text-center">
+  <a href="https://www.tcode.sk/"><strong>tcode.sk</strong></a>
+  <br>
+</p>
+
+<hr>
+
+<form [formGroup]="form" class="app-form">
+  <div>
+    <label for="backdrop">Backdrop</label>
+    <input id="backdrop" formControlName="backdrop" type="checkbox">
+  </div>
+  <div>
+    <label for="selectable">Selectable</label>
+    <input id="selectable" formControlName="selectable" type="checkbox">
+  </div>
+  <div>
+    <label for="preLoadImages">Pre-load images</label>
+    <input id="preLoadImages" formControlName="preLoadImages" type="checkbox">
+  </div>
+  <div>
+    <label for="changeRoute">Change route</label>
+    <input id="changeRoute" formControlName="changeRoute" type="checkbox">
+  </div>
+  <div>
+    <label for="disableRightClick">Disable right click</label>
+    <input id="disableRightClick" formControlName="disableRightClick" type="checkbox">
+  </div>
+  <div>
+    <label for="enableDownload">Enable download</label>
+    <input id="enableDownload" formControlName="enableDownload" type="checkbox">
+  </div>
+  <div>
+    <label for="trapFocusAutoCapture">Trap focus Auto-capture</label>
+    <input id="trapFocusAutoCapture" formControlName="trapFocusAutoCapture" type="checkbox">
+  </div>
+  <div>
+    <label for="showImageName">Show image name</label>
+    <input id="showImageName" formControlName="showImageName" type="checkbox">
+  </div>
+  <div>
+    <button (click)="openGallery()">Open gallery</button>
+  </div>
 </form>
+
+<router-outlet />
+<tc-gallery></tc-gallery>

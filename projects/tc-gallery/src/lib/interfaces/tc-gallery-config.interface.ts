@@ -6,4 +6,5 @@ export interface TcGalleryConfig {
   disableRightClick?: boolean,
   enableDownload?: boolean,
   trapFocusAutoCapture?: boolean,
+  showImageName?: boolean,
 }

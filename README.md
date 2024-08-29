@@ -1,27 +1,21 @@
-# TcGalleryTestApp
+<h1 align="center">tCode Gallery - Simple Angular touch image gallery</h1>
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.0.3.
+<p align="center">
+  <em>Import, use, enjoy!</em>
+  <br>
+</p>
 
-## Development server
+<p align="center">
+  <a href="https://www.tcode.sk/"><strong>tcode.sk</strong></a>
+  <br>
+</p>
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+<hr>
 
-## Code scaffolding
+# About
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+This repo contains App Wrapper of tCode Gallery library + library itself. For all information how to use library, see library's [README.md](https://www.github.com/tcode-sk/tc-gallery/projects/tc-gallery/README.md).
 
-## Build
+## TcGallery App Wrapper
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+This App is wrapper for demo/testing/contributing purposes. Simply use `npm i`, then `ng serve` and enjoy App wrapper.

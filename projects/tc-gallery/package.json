@@ -1,6 +1,9 @@
 {
   "name": "tc-gallery",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "description": "tCode Gallery - Simple Angular touch image gallery",
+  "homepage": "https://github.com/tcode-sk/tc-gallery",
+  "license": "MIT",
   "peerDependencies": {
     "@angular/common": "^18.0.0",
     "@angular/core": "^18.0.0",

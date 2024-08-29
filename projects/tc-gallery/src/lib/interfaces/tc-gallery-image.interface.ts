@@ -1,5 +1,6 @@
 export interface TcGalleryImage {
   src: string,
+  srcDownload?: string,
   name?: string,
   slug?: string,
   alt?: string,

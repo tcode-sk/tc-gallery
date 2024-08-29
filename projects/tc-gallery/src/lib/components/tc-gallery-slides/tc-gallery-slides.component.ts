@@ -18,6 +18,7 @@ import { NavigationExtras, Router } from '@angular/router';
 import { delay, Subject, takeUntil } from 'rxjs';
 import { DOCUMENT, JsonPipe } from '@angular/common';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
+import { HttpClient } from '@angular/common/http';
 
 import { TcGalleryService } from '../../services/tc-gallery.service';
 import { ImageLoadedDirective } from '../../directives/image-loaded/image-loaded.directive';
@@ -137,7 +138,7 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
 
   constructor(private renderer: Renderer2, private router: Router, public tcGalleryService: TcGalleryService,
               private changeDetectorRef: ChangeDetectorRef, @Inject(DOCUMENT) public document: Document,
-              private elementRef: ElementRef) {
+              private elementRef: ElementRef, private http: HttpClient) {
     super();
   }
 
@@ -272,13 +273,22 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
   }
 
   downloadImage(): void {
-    const anchorElement = this.document.createElement('a');
-    anchorElement.href = this.images[this.currentIndex].src;
-    anchorElement.download = this.images[this.currentIndex].name!;
+    const url = this.images[this.currentIndex].srcDownload ? this.images[this.currentIndex].srcDownload! : this.images[this.currentIndex].src;
 
-    this.document.body.appendChild(anchorElement);
-    anchorElement.click();
-    this.document.body.removeChild(anchorElement);
+    this.http.get(url, { responseType: 'blob' }).subscribe({
+      next: (blob: Blob) => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = this.images[this.currentIndex].slug!;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        },
+      error: (error)=> {
+        console.error('Error downloading the image: ', error);
+      }
+    });
   }
 
   onStart(event: AnimationEvent): void {
@@ -330,7 +340,6 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
     }
 
     if (this.config.changeRoute) {
-      console.log('onDone - changeRoute to: ', this.images[this.currentIndex].slug);
       const queryParams: NavigationExtras = {
         queryParams: { tcg: this.images[this.currentIndex].slug },
         queryParamsHandling: 'merge',
