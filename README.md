@@ -14,7 +14,7 @@
 
 # About
 
-This repo contains App Wrapper of tCode Gallery library + library itself. For all information how to use library, see library's [README.md](https://www.github.com/tcode-sk/tc-gallery/projects/tc-gallery/README.md).
+This repo contains App Wrapper of tCode Gallery library + library itself. For all information how to use library, see library's [README.md](https://github.com/tcode-sk/tc-gallery/blob/main/projects/tc-gallery/README.md).
 
 ## TcGallery App Wrapper
 
