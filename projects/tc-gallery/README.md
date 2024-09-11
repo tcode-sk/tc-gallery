@@ -6,7 +6,12 @@
 </p>
 
 <p align="center">
-  <a href="https://www.tcode.sk/"><strong>tcode.sk</strong></a>
+  <a href="https://tcode.sk/tc-gallery/" target="_blank">Try our demo</a>
+  <br>
+</p>
+
+<p align="center">
+  <a href="https://www.tcode.sk/" target="_blank"><strong>tcode.sk</strong></a>
   <br>
 </p>
 
