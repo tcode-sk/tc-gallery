@@ -196,7 +196,7 @@ Run `ng build tc-gallery --watch` to build and watch for changes of `tc-gallery`
 1. Navigate to library’s root folder (where angular.json is located), path: `projects/tc-gallery/src/`
 2. Create a symlink to our library in your global npm modules: `npm link`
 3. Navigate to your App root folder, path: `/`
-4. Link `tc-gallery` library using the globally linked package: `npm link tc-gallery`
+4. Link `tc-gallery` library using the globally linked package: `npm link @tcode-sk/tc-gallery`
 5. In your App, import and use the components from library as needed.
 
 ### Build

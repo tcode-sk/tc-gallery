@@ -1,12 +1,12 @@
 {
-  "name": "tc-gallery",
+  "name": "@tcode-sk/tc-gallery",
   "version": "1.0.1",
   "description": "tCode Gallery - Simple Angular touch image gallery",
   "homepage": "https://github.com/tcode-sk/tc-gallery",
   "author": "tcode.sk",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tcode-sk/tc-gallery"
+    "url": "git+https://github.com/tcode-sk/tc-gallery.git"
   },
   "bugs": {
     "url": "https://github.com/tcode-sk/tc-gallery/issues"
