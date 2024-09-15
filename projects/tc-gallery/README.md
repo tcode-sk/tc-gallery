@@ -19,7 +19,7 @@
 
 ## Installation
 
-Run `npm i tcgallery --save`
+Run `npm i @tcode-sk/tc-gallery --save`
 
 ## Usage
 
