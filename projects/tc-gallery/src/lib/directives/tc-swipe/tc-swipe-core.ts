@@ -1,9 +1,9 @@
 import { filter, fromEvent, Observable, race, Subscription } from 'rxjs';
 import { elementAt, map, switchMap, takeUntil, tap } from 'rxjs/operators';
 
-import { SwipeCoordinates, SwipeDirection, SwipeEvent, SwipeStartEvent, SwipeSubscriptionConfig } from './swipe-core.types';
+import { TcSwipeCoordinates, TcSwipeDirection, TcSwipeEvent, TcSwipeStartEvent, TcSwipeSubscriptionConfig } from './tc-swipe-core.types';
 
-export function createSwipeSubscription({ document, elementRef, onSwipeMove, onSwipeEnd }: SwipeSubscriptionConfig): Subscription {
+export function tcCreateSwipeSubscription({ document, elementRef, onSwipeMove, onSwipeEnd }: TcSwipeSubscriptionConfig): Subscription {
   if (!(elementRef instanceof HTMLElement)) {
     throw new Error('Provided domElement should be an instance of HTMLElement');
   }
@@ -16,16 +16,16 @@ export function createSwipeSubscription({ document, elementRef, onSwipeMove, onS
 
   const touchStarts$ = fromEvent<TouchEvent>(elementRef, 'touchstart').pipe(
     map(getTouchCoordinates),
-    filter((touchStartEvent: SwipeCoordinates) => !document.defaultView || !(touchStartEvent.x <= edgeSwipeThreshold || touchStartEvent.x >= document.defaultView.innerWidth - edgeSwipeThreshold)),
+    filter((touchStartEvent: TcSwipeCoordinates) => !document.defaultView || !(touchStartEvent.x <= edgeSwipeThreshold || touchStartEvent.x >= document.defaultView.innerWidth - edgeSwipeThreshold)),
   );
   const touchMoves$ = fromEvent<TouchEvent>(elementRef, 'touchmove').pipe(map(getTouchCoordinates));
   const touchEnds$ = fromEvent<TouchEvent>(elementRef, 'touchend').pipe(map(getTouchCoordinates));
   const touchCancels$ = fromEvent<TouchEvent>(elementRef, 'touchcancel');
 
-  const touchStartsWithDirection$: Observable<SwipeStartEvent> = touchStarts$.pipe(
-    switchMap((touchStartEvent: SwipeCoordinates) => touchMoves$.pipe(
+  const touchStartsWithDirection$: Observable<TcSwipeStartEvent> = touchStarts$.pipe(
+    switchMap((touchStartEvent: TcSwipeCoordinates) => touchMoves$.pipe(
       elementAt(3),
-      map((touchMoveEvent: SwipeCoordinates) => ({
+      map((touchMoveEvent: TcSwipeCoordinates) => ({
           x: touchStartEvent.x,
           y: touchStartEvent.y,
           direction: getTouchDirection(touchStartEvent, touchMoveEvent),
@@ -37,14 +37,14 @@ export function createSwipeSubscription({ document, elementRef, onSwipeMove, onS
   return touchStartsWithDirection$.pipe(
     switchMap(touchStartEvent => touchMoves$.pipe(
       map(touchMoveEvent => getTouchDistance(touchStartEvent, touchMoveEvent)),
-      tap((coordinates: SwipeCoordinates) => {
+      tap((coordinates: TcSwipeCoordinates) => {
         if (typeof onSwipeMove !== 'function') { return; }
         onSwipeMove(getSwipeEvent(touchStartEvent, coordinates));
       }),
       takeUntil(race(
         touchEnds$.pipe(
           map(touchEndEvent => getTouchDistance(touchStartEvent, touchEndEvent)),
-          tap((coordinates: SwipeCoordinates) => {
+          tap((coordinates: TcSwipeCoordinates) => {
             if (typeof onSwipeEnd !== 'function') { return; }
             onSwipeEnd(getSwipeEvent(touchStartEvent, coordinates, elementRef));
           })
@@ -55,26 +55,26 @@ export function createSwipeSubscription({ document, elementRef, onSwipeMove, onS
   ).subscribe();
 }
 
-function getTouchCoordinates(touchEvent: TouchEvent): SwipeCoordinates  {
+function getTouchCoordinates(touchEvent: TouchEvent): TcSwipeCoordinates  {
   return {
     x: touchEvent.changedTouches[0].clientX,
     y: touchEvent.changedTouches[0].clientY,
   };
 }
 
-function getTouchDistance(startCoordinates: SwipeCoordinates, moveCoordinates: SwipeCoordinates): SwipeCoordinates {
+function getTouchDistance(startCoordinates: TcSwipeCoordinates, moveCoordinates: TcSwipeCoordinates): TcSwipeCoordinates {
   return {
     x: moveCoordinates.x - startCoordinates.x,
     y: moveCoordinates.y - startCoordinates.y,
   };
 }
 
-function getTouchDirection(startCoordinates: SwipeCoordinates, moveCoordinates: SwipeCoordinates): SwipeDirection {
+function getTouchDirection(startCoordinates: TcSwipeCoordinates, moveCoordinates: TcSwipeCoordinates): TcSwipeDirection {
   const { x, y } = getTouchDistance(startCoordinates, moveCoordinates);
-  return Math.abs(x) < Math.abs(y) ? SwipeDirection.Y : SwipeDirection.X;
+  return Math.abs(x) < Math.abs(y) ? TcSwipeDirection.Y : TcSwipeDirection.X;
 }
 
-function getSwipeEvent(touchStartEvent: SwipeStartEvent, coordinates: SwipeCoordinates, elementRef?: HTMLElement): SwipeEvent  {
+function getSwipeEvent(touchStartEvent: TcSwipeStartEvent, coordinates: TcSwipeCoordinates, elementRef?: HTMLElement): TcSwipeEvent  {
   return {
     direction: touchStartEvent.direction,
     distance: coordinates[touchStartEvent.direction],
@@ -83,10 +83,10 @@ function getSwipeEvent(touchStartEvent: SwipeStartEvent, coordinates: SwipeCoord
   };
 }
 
-function getPercentage(direction: SwipeDirection, distance: number, elementRef: HTMLElement | undefined): number {
+function getPercentage(direction: TcSwipeDirection, distance: number, elementRef: HTMLElement | undefined): number {
   if (elementRef) {
     const currentBoundingClientRect = elementRef.getBoundingClientRect()
-    if (direction === SwipeDirection.X) {
+    if (direction === TcSwipeDirection.X) {
       return (Math.abs(distance) - currentBoundingClientRect.left) / currentBoundingClientRect.width * 100;
     } else {
       return (Math.abs(distance) - currentBoundingClientRect.top) / currentBoundingClientRect.height * 100;

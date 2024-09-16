@@ -9,24 +9,24 @@
 import { DOCUMENT } from '@angular/common';
 import { Directive, ElementRef, EventEmitter, HostBinding, HostListener, Inject, Input, Output } from '@angular/core';
 
-export interface FullscreenTransition {
+export interface TcFullscreenTransition {
   isFullscreen: boolean;
   element: Element | null;
 }
 
 @Directive({
-  selector: '[fullscreen]',
+  selector: '[tc-fullscreen]',
   standalone: true,
-  exportAs: 'fullscreen'
+  exportAs: 'tc-fullscreen'
 })
-export class FullscreenDirective {
+export class TcFullscreenDirective {
 
   @Input() set fullscreenDocument(enabled: boolean) {
     if (enabled) {
       this.element = this.document.documentElement;
     }
   }
-  @Output() fullscreenChange = new EventEmitter<FullscreenTransition>();
+  @Output() fullscreenChange = new EventEmitter<TcFullscreenTransition>();
 
   @HostBinding('class.fullscreen') get isFullscreen(): boolean {
     return this.isFullscreenEnabled();

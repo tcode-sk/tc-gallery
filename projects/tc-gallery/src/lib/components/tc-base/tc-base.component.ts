@@ -7,7 +7,7 @@ import { Subject } from 'rxjs';
   imports: [],
   template: ``
 })
-export class BaseComponent implements OnDestroy {
+export class TcBaseComponent implements OnDestroy {
   takeUntil$ = new Subject<void>();
 
   ngOnDestroy(): void {

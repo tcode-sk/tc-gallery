@@ -4,7 +4,7 @@ import { Directive, EventEmitter, HostListener, Output } from '@angular/core';
   selector: '[tcImageLoaded]',
   standalone: true,
 })
-export class ImageLoadedDirective {
+export class TcImageLoadedDirective {
   @Output() loaded = new EventEmitter<void>();
 
   @HostListener('load') onLoad(): void {

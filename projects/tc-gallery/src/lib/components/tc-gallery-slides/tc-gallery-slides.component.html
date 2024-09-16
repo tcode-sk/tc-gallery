@@ -1,7 +1,7 @@
 <div class="tc-gallery__slides" [@slidesAnimation]="show"
      (@slidesAnimation.start)="onStart($event)"
      (@slidesAnimation.done)="onDone($event)"
-     fullscreen
+     tc-fullscreen
      (fullscreenChange)="onFullscreenChange($event)"
      cdkTrapFocus
      [cdkTrapFocusAutoCapture]="config.trapFocusAutoCapture">

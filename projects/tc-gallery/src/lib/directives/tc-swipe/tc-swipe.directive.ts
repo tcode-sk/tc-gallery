@@ -2,18 +2,18 @@ import { Directive, ElementRef, EventEmitter, Inject, NgZone, OnDestroy, OnInit,
 import { Subscription } from 'rxjs';
 import { DOCUMENT } from '@angular/common';
 
-import { SwipeEvent } from './swipe-core.types';
-import { createSwipeSubscription } from './swipe-core';
+import { TcSwipeEvent } from './tc-swipe-core.types';
+import { tcCreateSwipeSubscription } from './tc-swipe-core';
 
 @Directive({
   selector: '[tcSwipe]',
   standalone: true,
 })
-export class SwipeDirective implements OnInit, OnDestroy {
+export class TcSwipeDirective implements OnInit, OnDestroy {
   private swipeSubscription: Subscription | undefined;
 
-  @Output() swipeMove: EventEmitter<SwipeEvent> = new EventEmitter<SwipeEvent>();
-  @Output() swipeEnd: EventEmitter<SwipeEvent> = new EventEmitter<SwipeEvent>();
+  @Output() swipeMove: EventEmitter<TcSwipeEvent> = new EventEmitter<TcSwipeEvent>();
+  @Output() swipeEnd: EventEmitter<TcSwipeEvent> = new EventEmitter<TcSwipeEvent>();
 
   constructor(
     private elementRef: ElementRef,
@@ -23,11 +23,11 @@ export class SwipeDirective implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.zone.runOutsideAngular(() => {
-      this.swipeSubscription = createSwipeSubscription({
+      this.swipeSubscription = tcCreateSwipeSubscription({
         document: this.document,
         elementRef: this.elementRef.nativeElement,
-        onSwipeMove: (swipeMoveEvent: SwipeEvent) => this.swipeMove.emit(swipeMoveEvent),
-        onSwipeEnd: (swipeEndEvent: SwipeEvent) => this.swipeEnd.emit(swipeEndEvent)
+        onSwipeMove: (swipeMoveEvent: TcSwipeEvent) => this.swipeMove.emit(swipeMoveEvent),
+        onSwipeEnd: (swipeEndEvent: TcSwipeEvent) => this.swipeEnd.emit(swipeEndEvent)
       });
     });
   }

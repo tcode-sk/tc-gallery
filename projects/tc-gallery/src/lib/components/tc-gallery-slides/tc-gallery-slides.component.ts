@@ -21,10 +21,10 @@ import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { HttpClient } from '@angular/common/http';
 
 import { TcGalleryService } from '../../services/tc-gallery.service';
-import { ImageLoadedDirective } from '../../directives/image-loaded/image-loaded.directive';
-import { SwipeDirective } from '../../directives/swipe/swipe.directive';
-import { SwipeDirection, SwipeEvent } from '../../directives/swipe/swipe-core.types';
-import { BaseComponent } from '../base/base.component';
+import { TcImageLoadedDirective } from '../../directives/tc-image-loaded/tc-image-loaded.directive';
+import { TcSwipeDirective } from '../../directives/tc-swipe/tc-swipe.directive';
+import { TcSwipeDirection, TcSwipeEvent } from '../../directives/tc-swipe/tc-swipe-core.types';
+import { TcBaseComponent } from '../tc-base/tc-base.component';
 import { TcGallery, TcGalleryInternal } from '../../interfaces/tc-gallery.interface';
 import {
   TcGalleryImage,
@@ -32,33 +32,33 @@ import {
   TcGalleryImageSelected
 } from '../../interfaces/tc-gallery-image.interface';
 import { TcGalleryConfig } from '../../interfaces/tc-gallery-config.interface';
-import { DisableRightClickDirective } from '../../directives/right-click/right-click.directive';
-import { FullscreenDirective, FullscreenTransition } from '../../directives/fullscreen/fullscreen.directive';
-import { AnimationDirectionEnum, AnimationLifeCycleEnum } from '../../enums/animation.enum';
-import { AnimationEventInterface } from '../../interfaces/animation-event.interface';
+import { TcDisableRightClickDirective } from '../../directives/tc-right-click/tc-right-click.directive';
+import { TcFullscreenDirective, TcFullscreenTransition } from '../../directives/tc-fullscreen/tc-fullscreen.directive';
+import { TcAnimationDirectionEnum, TcAnimationLifeCycleEnum } from '../../enums/tc-animation.enum';
+import { TcAnimationEventInterface } from '../../interfaces/tc-animation-event.interface';
 
 @Component({
   selector: 'lib-tc-gallery-slides',
   standalone: true,
   imports: [
-    ImageLoadedDirective,
-    SwipeDirective,
+    TcImageLoadedDirective,
+    TcSwipeDirective,
     JsonPipe,
-    DisableRightClickDirective,
-    FullscreenDirective,
+    TcDisableRightClickDirective,
+    TcFullscreenDirective,
     CdkTrapFocus,
   ],
   templateUrl: './tc-gallery-slides.component.html',
   styleUrl: './tc-gallery-slides.component.scss',
   animations: [
     trigger('slidesAnimation', [
-      transition(`* => ${AnimationDirectionEnum.RIGHT}`, query('.tc-gallery__slide', [animate('0.5s ease-in', style({transform: 'translateX(-200%)'}))])),
-      transition(`* => ${AnimationDirectionEnum.LEFT}`, query('.tc-gallery__slide', [animate('0.5s ease-in', style({transform: 'translateX(0)'}))])),
+      transition(`* => ${TcAnimationDirectionEnum.RIGHT}`, query('.tc-gallery__slide', [animate('0.5s ease-in', style({transform: 'translateX(-200%)'}))])),
+      transition(`* => ${TcAnimationDirectionEnum.LEFT}`, query('.tc-gallery__slide', [animate('0.5s ease-in', style({transform: 'translateX(0)'}))])),
     ]),
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TcGallerySlidesComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class TcGallerySlidesComponent extends TcBaseComponent implements OnInit, AfterViewInit {
 
   @Input() set gallery(gallery: TcGalleryInternal) {
     this._gallery = gallery;
@@ -75,9 +75,9 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
   @Output() currentImage = new EventEmitter<TcGalleryImage>();
   @Output() selectedImage = new EventEmitter<TcGalleryImageSelected>();
 
-  animationDirectionEnum = AnimationDirectionEnum;
+  animationDirectionEnum = TcAnimationDirectionEnum;
 
-  show = AnimationDirectionEnum.STOP;
+  show = TcAnimationDirectionEnum.STOP;
   slides: TcGalleryImageInternal[] = []
   currentSlideIndex = 0;
 
@@ -91,7 +91,7 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
   isFullscreen = false;
 
   private isAnimated = false;
-  private animationEvent$ = new Subject<AnimationEventInterface>();
+  private animationEvent$ = new Subject<TcAnimationEventInterface>();
 
   private _currentIndex = 0;
   private _gallery!: TcGalleryInternal;
@@ -99,7 +99,7 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
   private wasFocused = false;
 
   @ViewChild('dummySlide') dummySlide: ElementRef | undefined;
-  @ViewChild(FullscreenDirective) fullscreen!: FullscreenDirective;
+  @ViewChild(TcFullscreenDirective) fullscreen!: TcFullscreenDirective;
 
   @HostListener('document:keydown', ['$event']) handleKeyboardEvent(event: KeyboardEvent): void {
     if (event.key === 'ArrowLeft') {
@@ -186,10 +186,10 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
       });
     }
 
-    this.animationEvent$.pipe(takeUntil(this.takeUntil$)).subscribe({next: (animationEvent: AnimationEventInterface) => {
-      if (animationEvent.animationLifeCycle === AnimationLifeCycleEnum.START) {
+    this.animationEvent$.pipe(takeUntil(this.takeUntil$)).subscribe({next: (animationEvent: TcAnimationEventInterface) => {
+      if (animationEvent.animationLifeCycle === TcAnimationLifeCycleEnum.START) {
         this.isAnimated = true;
-      } else if (animationEvent.animationLifeCycle === AnimationLifeCycleEnum.END) {
+      } else if (animationEvent.animationLifeCycle === TcAnimationLifeCycleEnum.END) {
         this.onAnimationDone();
         this.isAnimated = false;
       }
@@ -240,26 +240,26 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
     }
   }
 
-  moveImage(direction: AnimationDirectionEnum): void {
+  moveImage(direction: TcAnimationDirectionEnum): void {
     if (
-      direction === AnimationDirectionEnum.LEFT && this.currentIndex === 0 ||
-      direction === AnimationDirectionEnum.RIGHT && this.currentIndex + 1 === this.images.length ||
-      direction === AnimationDirectionEnum.RIGHT && this.slides.length === 1 ||
-      (this.config.preLoadImages && (direction === AnimationDirectionEnum.LEFT && this.prevIsLoading || direction === AnimationDirectionEnum.RIGHT && this.nextIsLoading))
+      direction === TcAnimationDirectionEnum.LEFT && this.currentIndex === 0 ||
+      direction === TcAnimationDirectionEnum.RIGHT && this.currentIndex + 1 === this.images.length ||
+      direction === TcAnimationDirectionEnum.RIGHT && this.slides.length === 1 ||
+      (this.config.preLoadImages && (direction === TcAnimationDirectionEnum.LEFT && this.prevIsLoading || direction === TcAnimationDirectionEnum.RIGHT && this.nextIsLoading))
     ) {
       return;
     }
     this.show = direction;
   }
 
-  onSwipeEnd(event: SwipeEvent): void {
-    if (event.direction === SwipeDirection.X && event.distance < 0 && Math.abs(event.distance) > 75) {
+  onSwipeEnd(event: TcSwipeEvent): void {
+    if (event.direction === TcSwipeDirection.X && event.distance < 0 && Math.abs(event.distance) > 75) {
       this.moveImage(this.animationDirectionEnum.RIGHT);
       this.changeDetectorRef.detectChanges();
-    } else if (event.direction === SwipeDirection.X && event.distance > 0 && Math.abs(event.distance) > 75) {
+    } else if (event.direction === TcSwipeDirection.X && event.distance > 0 && Math.abs(event.distance) > 75) {
       this.moveImage(this.animationDirectionEnum.LEFT);
       this.changeDetectorRef.detectChanges();
-    } else if (event.direction === SwipeDirection.Y && event.distance > 0 && Math.abs(event.distance) > 75) {
+    } else if (event.direction === TcSwipeDirection.Y && event.distance > 0 && Math.abs(event.distance) > 75) {
       this.tcGalleryService.closeGallery(this.gallery.id);
     }
   }
@@ -268,7 +268,7 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
     this.fullscreen.toggle();
   }
 
-  onFullscreenChange(event: FullscreenTransition): void {
+  onFullscreenChange(event: TcFullscreenTransition): void {
     this.isFullscreen = event.isFullscreen;
   }
 
@@ -293,18 +293,18 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
 
   onStart(event: AnimationEvent): void {
     if (this.isAnimating(event)) {
-      this.animationEvent$.next({animationEvent: event, animationLifeCycle: AnimationLifeCycleEnum.START});
+      this.animationEvent$.next({animationEvent: event, animationLifeCycle: TcAnimationLifeCycleEnum.START});
     }
   }
 
   onDone(event: AnimationEvent): void {
     if (this.isAnimating(event)) {
-      this.animationEvent$.next({animationEvent: event, animationLifeCycle: AnimationLifeCycleEnum.END});
+      this.animationEvent$.next({animationEvent: event, animationLifeCycle: TcAnimationLifeCycleEnum.END});
     }
   }
 
   private onAnimationDone(): void {
-    if (this.show === AnimationDirectionEnum.RIGHT) {
+    if (this.show === TcAnimationDirectionEnum.RIGHT) {
       this.currentIndex = this.currentIndex + 1;
 
       if (this.currentIndex === 1) {
@@ -319,7 +319,7 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
         this.slides.push(this.images[this.currentIndex + 1]);
         this.queueIsLoading(this.slides.length - 1);
       }
-    } else if (this.show === AnimationDirectionEnum.LEFT) {
+    } else if (this.show === TcAnimationDirectionEnum.LEFT) {
       if (this.isNextSlideNotLast) {
         this.slides.pop();
       }
@@ -350,7 +350,7 @@ export class TcGallerySlidesComponent extends BaseComponent implements OnInit, A
       this.router.navigate([], queryParams);
     }
 
-    this.show = AnimationDirectionEnum.STOP;
+    this.show = TcAnimationDirectionEnum.STOP;
   }
 
   private setupFirstImage(gallery: TcGallery['gallery']): void {

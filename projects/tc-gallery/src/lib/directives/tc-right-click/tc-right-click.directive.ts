@@ -4,7 +4,7 @@ import { Directive, HostListener, Input } from '@angular/core';
   standalone: true,
   selector: '[tcDisableRightClick]'
 })
-export class DisableRightClickDirective {
+export class TcDisableRightClickDirective {
   @Input() useDisableRightClick: boolean = true;
 
   @HostListener('contextmenu', ['$event']) onRightClick(event: MouseEvent): void {

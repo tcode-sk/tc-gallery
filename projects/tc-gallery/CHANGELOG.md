@@ -1,3 +1,6 @@
+# 1.0.6
+- renaming of all used exports with `tc-` prefix
+
 # 1.0.5
 - fixed README
 
